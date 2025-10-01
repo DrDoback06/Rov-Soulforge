@@ -1,0 +1,184 @@
+================================================================================
+                    REALM OF VALOR - HOW TO DEBUG
+================================================================================
+
+Your environment is correctly configured! ✅
+Now we need to see where the app gets stuck during startup.
+
+--------------------------------------------------------------------------------
+  STEP 1: START THE APP
+--------------------------------------------------------------------------------
+
+cd "f:\Soulforge 09-2025\rov\apps\mobile"
+pnpm start --clear
+
+Wait for Metro bundler to start...
+
+--------------------------------------------------------------------------------
+  STEP 2: WATCH FOR THESE LOGS (IN ORDER)
+--------------------------------------------------------------------------------
+
+You should see these emojis in your terminal:
+
+  1️⃣  🔥 Firebase Config Check
+       ↓
+       Shows: API Key exists: true/false
+              Project ID: realmofvalorapp
+              App ID exists: true/false
+
+  2️⃣  📱 App starting...
+       ↓
+       Means React Native is loading
+
+  3️⃣  🔐 Firebase Provider - Setting up auth listener...
+       ↓
+       🔐 Auth state changed: User: null
+       ↓
+       Means Firebase authentication initialized
+
+  4️⃣  ✅ App ready
+       ↓
+       Means app finished initializing
+
+  5️⃣  🔍 Index Screen - Routing Logic
+       ↓
+       Shows: authLoading: false
+              characterLoading: false
+              user exists: false
+              character exists: false
+       ↓
+       → Navigating to /auth/login (no user)
+
+--------------------------------------------------------------------------------
+  STEP 3: LAUNCH THE APP
+--------------------------------------------------------------------------------
+
+Press 'a' for Android emulator
+Press 'i' for iOS simulator
+
+--------------------------------------------------------------------------------
+  WHAT SHOULD HAPPEN
+--------------------------------------------------------------------------------
+
+✅ If you see ALL 5 emoji logs above:
+   → Login screen should appear on your device/simulator!
+
+❌ If logs stop before reaching all 5:
+   → Note which emoji you saw last
+   → That tells us where the problem is!
+
+--------------------------------------------------------------------------------
+  COMMON SCENARIOS
+--------------------------------------------------------------------------------
+
+Scenario A: Stops at 🔥 (Firebase Config shows "false" or "undefined")
+  Problem: .env file not being read
+  Fix: pnpm start --clear
+  Details: See GET_APP_RUNNING.md
+
+Scenario B: See 🔥 but not 📱
+  Problem: JavaScript error preventing React from loading
+  Fix: Look for RED ERROR TEXT in console
+  Details: See DEBUGGING_GUIDE.md
+
+Scenario C: See 📱 but not 🔐
+  Problem: FirebaseProvider not mounting
+  Fix: Check for errors in Metro console
+  Details: See ACTION_PLAN.md Step 8
+
+Scenario D: See 🔐 but not ✅
+  Problem: App stuck in loading state
+  Fix: Check for JavaScript errors
+  Details: See DEBUGGING_GUIDE.md Issue 2
+
+Scenario E: See ✅ but not 🔍
+  Problem: Index screen not rendering
+  Fix: Check expo-router installation
+  Details: See ACTION_PLAN.md Step 9
+
+Scenario F: See 🔍 and navigation log, but screen is blank
+  Problem: Target screen file missing or broken
+  Fix: Check that app/auth/login.tsx exists
+  Details: See DEBUGGING_GUIDE.md Issue 5
+
+--------------------------------------------------------------------------------
+  WHAT TO REPORT BACK
+--------------------------------------------------------------------------------
+
+Copy this template and fill it in:
+
+```
+Which emojis did I see?
+[X] 🔥 Firebase Config Check
+[ ] 📱 App starting...
+[ ] 🔐 Firebase Provider
+[ ] ✅ App ready
+[ ] 🔍 Index Screen Routing Logic
+
+Did Firebase config show "true" or "false"?
+API Key exists: _______
+Project ID: _______
+App ID exists: _______
+
+What's on my device/simulator screen?
+[ ] Blank white screen
+[ ] Blank black screen
+[ ] Splash screen frozen on "Loading..."
+[ ] Red error overlay (copy error message below)
+[ ] Login screen (IT WORKS!)
+
+Error messages from Metro console (if any):
+_______
+```
+
+--------------------------------------------------------------------------------
+  HELPFUL DOCUMENTS
+--------------------------------------------------------------------------------
+
+📘 GET_APP_RUNNING.md    - Start here for detailed help
+📘 DEBUGGING_GUIDE.md    - Explains what each log means
+📘 ACTION_PLAN.md        - Step-by-step troubleshooting
+📘 WHAT_I_DID_TODAY.md   - Summary of changes made
+
+--------------------------------------------------------------------------------
+  NEED TO CLEAR CACHES?
+--------------------------------------------------------------------------------
+
+If Firebase config shows "false" even though check-setup.js passed:
+
+cd "f:\Soulforge 09-2025\rov\apps\mobile"
+rm -rf .expo
+rm -rf node_modules/.cache
+pnpm start --clear
+
+This forces Metro to re-read the .env file.
+
+--------------------------------------------------------------------------------
+  CHECK YOUR SETUP FIRST
+--------------------------------------------------------------------------------
+
+If you haven't already, run this first:
+
+node check-setup.js
+
+This verifies:
+✅ .env file exists
+✅ All environment variables are set
+✅ node_modules installed
+✅ Key app files present
+
+If this shows any ❌ red marks, fix those first!
+
+================================================================================
+  🚀 READY TO GO!
+================================================================================
+
+1. cd "f:\Soulforge 09-2025\rov\apps\mobile"
+2. pnpm start --clear
+3. Press 'a' or 'i' when Metro is ready
+4. Watch for emojis in console 👀
+5. Report back which emojis you see!
+
+Let's figure this out! 💪
+
+================================================================================

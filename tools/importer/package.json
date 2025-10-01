@@ -1,0 +1,21 @@
+{
+  "name": "@rov/importer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "import:db": "tsx src/populate-db.ts"
+  },
+  "dependencies": {
+    "@rov/types": "workspace:*",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.2.0"
+  }
+}
