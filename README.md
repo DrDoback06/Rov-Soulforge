@@ -1,330 +1,246 @@
-# Realm of Valor Adventure App
+# 🏰 Realm of Valor - AR Fantasy RPG
 
-A GPS-enabled fitness RPG companion app that transforms physical activity into epic quests and card battles.
+> **A location-based fantasy RPG that transforms the real world into an epic adventure**
 
----
+## 🎮 Game Overview
 
-## 🚀 QUICK START - Get the App Running
+Realm of Valor is an innovative AR fantasy RPG that combines real-world exploration with epic questing, card battles, and character progression. Players explore their surroundings to discover quests, battle monsters, collect cards, and level up their characters.
 
-**Environment Status:** ✅ All configured and ready!
+## ✨ Core Features
 
-### Having trouble getting the app to load?
+### 🗺️ **Quest System**
+- **Static Quests**: Epic landmarks and locations across the UK
+- **Local Quests**: Dynamically generated based on nearby landmarks
+- **Dynamic Quests**: Player-specific quests that refresh on completion
+- **Multi-Stop Navigation**: Plan and execute multi-quest routes
+- **Route Optimization**: TSP algorithm for efficient quest routing
 
-👉 **[GET_APP_RUNNING.md](./GET_APP_RUNNING.md)** - Complete troubleshooting guide (START HERE)
+### 🎯 **Navigation & Exploration**
+- **Drive Mode**: Camera follows player with tilted view
+- **Real-time Navigation**: Walking routes with turn-by-turn guidance
+- **Quest Discovery**: "Search This Area" feature for location-based quests
+- **Viewport Loading**: Smart quest loading based on map view
 
-Or use the quick commands:
+### 🎴 **Card System**
+- **Card Collection**: Collect and manage fantasy cards
+- **Battle System**: Turn-based combat with strategic depth
+- **Equipment**: Equip cards to enhance character stats
+- **Stash Management**: Account-wide storage system
 
-```bash
-# Test your setup
-cd apps/mobile && node check-setup.js
+### 👤 **Character System**
+- **Character Creation**: Create and customize your hero
+- **Stats & Skills**: Strength, Dexterity, Intelligence, Vitality
+- **Skill Trees**: Linear progression with free-form customization
+- **Equipment Slots**: Diablo II-style inventory management
 
-# Start the app with debug logging
-cd apps/mobile && pnpm start --clear
-```
+### 🏆 **Progression & Rewards**
+- **Experience System**: Level up through quest completion
+- **Reward Multipliers**: Bonus rewards for multi-quest sessions
+- **Fitness Integration**: Strava connection for real-world activity
+- **Leaderboards**: Competitive rankings for epic quests
 
-**See also:**
-- [QUICK_START.txt](./QUICK_START.txt) - One-page quick reference
-- [ACTION_PLAN.md](./ACTION_PLAN.md) - Step-by-step diagnostic plan
-- [DEBUGGING_GUIDE.md](./DEBUGGING_GUIDE.md) - Understanding debug logs
-- [CURRENT_STATUS.md](./CURRENT_STATUS.md) - Project status and next steps
+## 🛠️ Technical Stack
 
----
+### **Frontend**
+- **React Native** (Expo) - Cross-platform mobile development
+- **TypeScript** - Type-safe development
+- **Mapbox** - Maps, navigation, and geocoding
+- **React Native Reanimated** - Smooth animations
+- **React Native Gesture Handler** - Touch interactions
 
-## 🎮 What is Realm of Valor?
+### **Backend**
+- **Firebase** - Authentication, Firestore, Cloud Functions
+- **Firestore** - Real-time database with geospatial queries
+- **Firebase Auth** - User authentication and management
+- **Cloud Functions** - Server-side logic and processing
 
-Realm of Valor combines the strategic depth of a deck-building card game with real-world GPS exploration and fitness tracking. Players create characters, explore their neighborhoods to discover quests, earn cards through physical activity, and battle other players using a unique stack-based combat system.
+### **Architecture**
+- **Monorepo** - Unified codebase with shared packages
+- **TypeScript** - End-to-end type safety
+- **Modular Design** - Reusable components and hooks
+- **Real-time Updates** - Live quest and battle updates
 
-### Key Features
-
-- **GPS Quest System**: Discover and complete location-based quests in the real world
-- **Fitness Integration**: Connect with Apple Health, Google Fit, Strava, Garmin, and WHOOP
-- **Stack-Based Combat**: Strategic card battles with instant interrupts and LIFO resolution
-- **Three Deck System**: Action, Skill, and Loot decks with 300+ unique cards
-- **Character Progression**: Level up, gain Renown, and customize your hero
-- **Social Features**: Friend system, leaderboards, and battle invites
-- **Economy System**: Earn gold through activities, purchase card packs, and trade in the Renown Shop
-
-## 🎮 Project Structure
-
-```
-rov/
-├── apps/
-│   ├── web/           # Expo web target
-│   ├── mobile/        # Expo native target (iOS/Android)
-│   └── backend/       # NestJS API + Cloud Functions
-├── packages/
-│   ├── ui/            # Shared UI components
-│   ├── types/         # TypeScript interfaces (✅ Complete)
-│   └── logic/         # Core Rules Engine, Stack resolver
-├── tools/
-│   ├── importer/      # Card & rulebook importer (✅ Complete)
-│   └── admin-scripts/ # Content management scripts
-├── infra/
-│   ├── firestore.rules
-│   ├── firestore.indexes.json
-│   └── cloud-functions/
-└── docs/
-    ├── spec.md
-    ├── cards.json      # Generated card database
-    ├── quests.json     # Generated quest database
-    └── shop-items.json # Generated shop items
-```
-
-## ✅ Completed Components
-
-### 1. Monorepo Foundation
-- pnpm workspace configuration
-- TypeScript + ESLint setup
-- Organized package structure
-
-### 2. Type System (`@rov/types`)
-Complete TypeScript interfaces for:
-- User & Character management
-- Card definitions (Action, Skill, Loot, Boss, Summon, Quest, Class)
-- Battle & Stack mechanics
-- Quest & Adventure system
-- Fitness tracking
-- Shop & Economy
-- Social features (Trading, Alliances)
-
-### 3. Card Importer (`@rov/importer`)
-Intelligent parser that:
-- Reads all 8 source text files
-- Extracts 600+ cards with effects
-- Parses damage, healing, buffs, debuffs, etc.
-- Identifies portable vs. non-portable cards
-- Generates structured JSON output
-- Provides coverage reports
-
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 20+
-- pnpm 8+
-- Firebase CLI
+- Node.js 18+
+- npm or yarn
 - Expo CLI
+- Firebase project
+- Mapbox account
 
 ### Installation
 
-1. **Clone and install dependencies**
+1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd rov
-   pnpm install
+   cd realm-of-valor
    ```
 
-2. **Set up Firebase**
-   - Create a Firebase project
-   - Download `service-account.json` to root
-   - Deploy Firestore rules and Cloud Functions
-
-   See [SETUP.md](./SETUP.md) for detailed instructions
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
 3. **Configure environment**
    ```bash
-   cp .env.example .env
-   # Edit .env with your credentials
+   cp apps/mobile/.env.example apps/mobile/.env
+   # Add your Firebase and Mapbox credentials
    ```
 
-4. **Import card data**
+4. **Start development server**
    ```bash
-   cd tools/importer
-   pnpm import:db
+   npm run dev
    ```
 
-5. **Start development servers**
-   ```bash
-   # Terminal 1 - Backend API
-   cd apps/backend
-   pnpm dev
+### Environment Variables
 
-   # Terminal 2 - Mobile App
-   cd apps/mobile
-   pnpm start
+```env
+# Firebase
+EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 
-   # Terminal 3 - Admin Dashboard
-   cd apps/admin
-   pnpm dev
-   ```
+# Mapbox
+EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=your_mapbox_token
 
-For complete setup instructions, see [SETUP.md](./SETUP.md)
+# Strava (Optional)
+EXPO_PUBLIC_STRAVA_CLIENT_ID=your_strava_client_id
+```
 
-## 📋 Architecture Overview
+## 🎯 Game Mechanics
 
-### Frontend (React Native + Expo)
-- **Universal**: Runs on iOS, Android, and Web
-- **Navigation**: Expo Router with tabs (Map, Battleground, Activity, Shop, Rules)
-- **UI Library**: tamagui for cross-platform components
-- **Maps**: Mapbox GL for GPS adventures
-- **Drag & Drop**: @dnd-kit for card interactions
+### **Quest Types**
+- **Static**: Permanent quests at major landmarks
+- **Local**: Generated from nearby POIs (2-week lifespan)
+- **Dynamic**: Player-specific quests (refreshes on completion)
 
-### Backend (NestJS + Firebase)
-- **Auth**: Firebase Authentication
-- **Database**: Firestore with security rules
-- **Real-time**: Firestore listeners for battles
-- **Functions**: Cloud Functions for spawns, IAP validation, activity sync
-- **APIs**: REST/GraphQL for battles, quests, fitness, shop, trades
+### **Quest Categories**
+- **Main Quests**: Epic storylines and major objectives
+- **World Quests**: Global events and community challenges
+- **Side Quests**: Optional content and exploration
 
-### Game Rules Engine
-- **Stack Resolver**: Last-In-First-Out (LIFO) effect resolution
-- **Effect Registry**: Modular effect handlers (damage, heal, buff, etc.)
-- **Turn Timer**: 60s base + 15s per Stack event, 120s hard cap
-- **RNG**: Seeded dice rolls with audit logging
+### **Quest Management**
+- **Active Quests**: Currently in progress
+- **Saved Quests**: Planned for future completion
+- **Hidden Quests**: Temporarily hidden from view
+- **Abandoned Quests**: Left incomplete (with XP penalty)
+
+## 🗺️ Navigation System
+
+### **Drive Mode**
+- **Camera Follow**: Tilted view that follows player movement
+- **Real-time Updates**: Continuous location tracking
+- **Turn-by-turn**: Walking route guidance
+- **Multi-stop**: Route optimization for multiple quests
+
+### **Quest Routing**
+- **Manual Ordering**: Drag-and-drop quest arrangement
+- **Auto Optimization**: TSP algorithm for efficient routing
+- **Real-time Updates**: Dynamic route adjustments
+- **Progress Tracking**: Visual progress indicators
 
 ## 🎴 Card System
 
-### Deck Types
-- **Class** (12 cards): Guardian, Barbarian, Paladin, Ranger, Druid, Cleric, Necromancer, Warlock, Sorceress, Demon, Angelic, Dragon
-- **Action** (100 cards): Events, challenges, global effects
-- **Skill** (100 cards): Spells and abilities (Legendary, Epic, Rare, Common)
-- **Loot** (100 cards): Equipment, consumables, fate cards
-- **Summon** (20 cards): Allies and hindrances
-- **Boss** (20 cards): Epic encounters
-- **Quest** (30 cards): Objectives with rewards
-- **Renown Shop** (30 cards): Powerful upgrades
+### **Card Types**
+- **Equipment**: Weapons, armor, accessories
+- **Skills**: Spells, abilities, special moves
+- **Companions**: Allies and summons
+- **Resources**: Materials and consumables
 
-### Card Portability
-- **Portable**: Works in app (90%+ of cards)
-- **Non-Portable**: Tabletop-only (social challenges, Soulforge Trial)
+### **Battle System**
+- **Turn-based Combat**: Strategic card battles
+- **Stack System**: Card combinations and synergies
+- **RNG Engine**: Fair and balanced randomness
+- **Real-time Updates**: Live battle progression
 
-### Effect Types
-The importer recognizes and parses:
-- Damage (single-target and AOE)
-- Healing
-- Buffs/Debuffs (ATK, DEF, HP, Mana)
-- Card draw
-- Steal/Discard
-- Renown/Gold/XP gains
-- Persistent effects (Auras, Curses, Links)
-- Boss spawns
-- Equipment
-- Custom effects (for manual mapping)
+## 🏗️ Architecture
 
-## 🗺️ GPS Adventure System
+### **Monorepo Structure**
+```
+rov/
+├── apps/
+│   ├── mobile/          # React Native app
+│   ├── backend/         # Node.js API
+│   └── admin/           # Admin dashboard
+├── packages/
+│   ├── types/           # Shared TypeScript types
+│   ├── logic/           # Game logic and utilities
+│   └── firebase/        # Firebase configuration
+└── tools/
+    └── importer/        # Data import utilities
+```
 
-### Place Types
-- Pub, Mountain, Trail, Monument, Park, Gym, Shop, Landmark, Water
+### **Key Components**
+- **Quest System**: Complete quest lifecycle management
+- **Navigation**: Real-time routing and guidance
+- **Character System**: Stats, skills, and progression
+- **Inventory**: Equipment and stash management
+- **Battle System**: Turn-based combat mechanics
 
-### Dynamic Spawns
-- Regional budgets per rarity tier
-- TTLs: Common 60m, Rare 45m, Legendary 90m
-- First-come-first-serve caps
-- Random encounters while navigating (20% loot, 10% ambush, 10% NPC)
+## 🧪 Testing
 
-### Geofencing
-- 50m radius (urban)
-- 150m radius (trails/mountains)
+### **Development Tools**
+- **Location Spoofer**: Test movement and navigation
+- **Quest Seeder**: Generate test quests
+- **Card Seeder**: Create test cards and items
+- **Battle Simulator**: Test combat mechanics
 
-## 💪 Fitness Integration
+### **Testing Checklist**
+- [ ] Quest discovery and activation
+- [ ] Multi-stop navigation
+- [ ] Drive mode camera following
+- [ ] Quest completion and rewards
+- [ ] Character progression
+- [ ] Inventory management
+- [ ] Battle system
 
-### Supported Platforms
-- Apple HealthKit (iOS)
-- Google Fit (Android)
-- Strava (OAuth)
-- Garmin (OAuth)
-- WHOOP (OAuth)
+## 📱 Platform Support
 
-### Rewards
-- **XP from quests**: Common +1, Uncommon +2, Rare +3, Epic +5, Legendary +8
-- **Gold from distance**: 1 Gold per 0.5 km (cap 20/day)
-- **Gold from elevation**: 1 Gold per 100m (cap 10/day)
-- **Temporary buffs**: HR-based challenges (e.g., 70% HRmax for 120s = +2 ATK for 10m)
-- **Streaks**: 3-day +10% XP, 7-day +20% XP
+- **iOS**: Native iOS app via Expo
+- **Android**: Native Android app via Expo
+- **Web**: Progressive Web App support
+- **Cross-platform**: Shared codebase and logic
 
-### Anti-Cheat
-- GPS quality checks
-- Pace plausibility (3:00-15:00 min/km)
-- HR spike filter (max +15 bpm per 5s)
-- Step-distance sanity checks
-- Cadence and movement validation
+## 🔮 Future Features
 
-## ⚔️ Battle System
+### **Planned Enhancements**
+- **AR Integration**: Augmented reality quest markers
+- **Voice Narration**: AI-powered quest storytelling
+- **Social Features**: Friends, trading, and parties
+- **Guild System**: Team-based gameplay
+- **Seasonal Events**: Limited-time content and rewards
 
-### Modes
-- **1v1 Casual**: Unranked duels with full stats
-- **1v1 Ranked**: ELO/MMR matchmaking with gear normalization
-- **2v2 Brawls**: Team battles
-- **Co-op Raids**: Up to 4 players vs. scaled bosses
+### **Advanced Features**
+- **Quest Crafting**: Player-created quests
+- **Dynamic Weather**: Weather-based quest modifiers
+- **Fitness Challenges**: Real-world activity integration
+- **Competitive Modes**: PvP and leaderboards
 
-### Turn Structure
-1. **Action Phase**: Draw and resolve Action card
-2. **Main Phase**: Play cards, attack, draw, shop
-3. **End Phase**: Discard to hand limits (5 Skill, 5 Loot, 5 Action)
+## 🤝 Contributing
 
-### The Stack
-- Last-In-First-Out resolution
-- Instant cards can respond to other Instants
-- Logged with RNG seeds for replay/audit
+We welcome contributions! Please see our contributing guidelines for details.
 
-### Victory Condition (In-App)
-- **Last Player Standing** only
-- Soulforge Trial removed from app battles
-- Renown → Gold conversion on PvP win (1:5 rate)
+### **Development Setup**
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-## 💰 Economy
+## 📄 License
 
-### Currency
-- **Gold**: Soft currency for packs, shop, upgrades
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Earning Gold
-- Quests (Common 5-10, Rare 25, Epic 40, Legendary 75)
-- Fitness activities (distance + elevation)
-- Battle rewards
-- Trading (buyback at low rates)
+## 🙏 Acknowledgments
 
-### Shop
-- **Item Packs** (10 cards): 750 Gold or £2.49
-- **Adventure Packs**: 1,200 Gold or £3.99
-- **Stash +10 slots**: 500 Gold or £1.49
-- **Cosmetics**: 300-800 Gold
-- **Respec Token**: 5,000 Gold (very rare)
-- **Monthly Pass** (Adventure/WOD Mode): £9.99
+- **Mapbox** for mapping and navigation services
+- **Firebase** for backend infrastructure
+- **Expo** for React Native development platform
+- **React Native** community for excellent libraries
 
-### Pack Odds
-- Common 60%, Uncommon 25%, Rare 10%, Epic 4%, Legendary 1%
-- Pity: Guaranteed ≥Rare every 3 packs
-- Duplicates → Shards (Common 1, Uncommon 3, Rare 10, Epic 25, Legendary 75)
-- Crafting costs: Rare 60, Epic 150, Legendary 450 shards
+---
 
-## 🔧 Development Status
+**Ready to embark on your epic adventure?** 🏰⚔️
 
-### Phase 1: Core Systems ✅
-- ✅ Type system and data models
-- ✅ Game logic engine (stack resolver, effects, RNG, turns, decks)
-- ✅ Firebase infrastructure (Cloud Functions, security rules)
-- ✅ Mobile app structure with navigation
-- ✅ Battle system with real-time updates
-- ✅ Quest system with GPS geofencing
-- ✅ Card importer and database population
-
-### Phase 2: Content & Polish ✅
-- ✅ Card data import (300+ cards)
-- ✅ Admin dashboard for content management
-- ✅ Leaderboards (Renown, Level, Gold)
-- ✅ Social features (friends, invites)
-- ✅ Authentication flows (login, signup, guest)
-- ✅ Card collection viewer with filters
-- ✅ Real-time Firebase hooks
-
-### Phase 3: Integrations (In Progress)
-- ✅ Firebase real-time listeners
-- ✅ Environment configuration
-- ⏳ Fitness API integrations (HealthKit, Google Fit, Strava)
-- ⏳ Push notifications (Firebase Cloud Messaging)
-- ⏳ In-app purchases (Apple, Google, Stripe)
-
-### Phase 4: Launch Preparation
-- ⏳ Beta testing
-- ⏳ Performance optimization
-- ⏳ App Store submission
-- ⏳ Marketing materials
-
-## 📝 License
-
-Proprietary - Realm of Valor © 2025
-
-## 🙏 Credits
-
-- **Game Design**: Original tabletop card game
-- **App Development**: Built with Claude Code
-- **Tech Stack**: React Native, Expo, NestJS, Firebase, Mapbox
+*Transform the world around you into a realm of endless possibilities!*
