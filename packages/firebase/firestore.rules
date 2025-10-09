@@ -13,7 +13,7 @@ service cloud.firestore {
     }
 
     function isParticipant(battle) {
-      return isAuthenticated() && request.auth.uid in battle.participants;
+      return isAuthenticated() && request.auth.uid in battle.playerIds;
     }
 
     // Users collection
@@ -59,6 +59,41 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Static quests (global, permanent quests at landmarks)
+    match /staticQuests/{questId} {
+      // Anyone can read static quests
+      allow read: if isAuthenticated();
+
+      // Quest creation via Cloud Function or admin only
+      allow create: if false;
+      allow update, delete: if false;
+    }
+
+    // Local quests (generated at nearby landmarks, globally visible after discovery)
+    match /localQuests/{questId} {
+      // Anyone can read local quests
+      allow read: if isAuthenticated();
+
+      // Quest creation/update via Cloud Function or generation service
+      allow create: if isAuthenticated(); // Allow for quest generation
+      allow update: if isAuthenticated(); // Allow for discovery updates
+      allow delete: if false;
+    }
+
+    // Dynamic quests (player-specific, not visible to others)
+    match /dynamicQuests/{questId} {
+      // Users can read their own dynamic quests
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+
+      // Quest creation for the user
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Quest updates for completion/progress
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      allow delete: if false;
+    }
+
     // Active quests (spawned dynamically)
     match /activeQuests/{questId} {
       // Anyone can read active quests in their region
@@ -77,14 +112,17 @@ service cloud.firestore {
     // Player quest progress
     match /questProgress/{progressId} {
       // Users can read their own quest progress
-      allow read: if isOwner(resource.data.uid);
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
 
       // Users can create quest progress when starting a quest
       allow create: if isAuthenticated()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.userId == request.auth.uid;
 
-      // Quest progress updates via Cloud Function only (validation)
-      allow update: if false;
+      // Users can update their own quest progress (for abandoning, objectives)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can delete their own quest progress (for abandoning)
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     // Activity events (fitness tracking)
@@ -107,6 +145,21 @@ service cloud.firestore {
 
       // Inventory updates via Cloud Function only (pack opening, trades)
       allow create, update: if false;
+    }
+
+    // Inventories (character items and stash)
+    match /inventories/{userId} {
+      // Users can read their own inventory
+      allow read: if isOwner(userId);
+
+      // Users can create their own inventory (during character creation)
+      allow create: if isAuthenticated() && userId == request.auth.uid;
+
+      // Users can update their own inventory (stash management, equipment)
+      allow update: if isOwner(userId);
+
+      // Users can delete their own inventory
+      allow delete: if isOwner(userId);
     }
 
     // Shop purchases

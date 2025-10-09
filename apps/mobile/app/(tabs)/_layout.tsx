@@ -1,11 +1,32 @@
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
-import { HeroPullDown } from '@/components/HeroPullDown';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { usePanelManagerContext } from '@/contexts/PanelManagerContext';
+import { HeroPanelContainer } from '@/components/HeroPanel/HeroPanelContainer';
+import { PanelToggles } from '@/components/PanelToggles';
+import { DragOverlay } from '@/components/DragOverlay';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const PANEL_WIDTH = Math.min(SCREEN_WIDTH * 0.4, 500); // 40% max 500px
 
 /**
- * Tab layout with Hero Pull-Down overlay
+ * Tab layout with global panel management
+ * 
+ * Features:
+ * - Quest Panel (managed from map screen)
+ * - Hero Panel (stats, equipment, skills)
+ * - Panel toggle buttons (accessible across all tabs)
+ * - Drag overlay for card/quest drag-and-drop
+ * - Mutual exclusion (only one panel open at a time)
  */
 export default function TabLayout() {
+  const {
+    isQuestPanelOpen,
+    isHeroPanelOpen,
+    toggleQuestPanel,
+    toggleHeroPanel,
+    closeAllPanels
+  } = usePanelManagerContext();
+
   return (
     <View style={{ flex: 1 }}>
       <Tabs
@@ -39,6 +60,13 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="stash"
+          options={{
+            title: 'Stash',
+            tabBarIcon: ({ color }) => <TabIcon name="stash" color={color} />
+          }}
+        />
+        <Tabs.Screen
           name="shop"
           options={{
             title: 'Shop',
@@ -68,8 +96,23 @@ export default function TabLayout() {
         />
       </Tabs>
 
-      {/* Hero Pull-Down overlay - always visible */}
-      <HeroPullDown />
+      {/* Hero Panel - accessible from all tabs */}
+      <HeroPanelContainer
+        isOpen={isHeroPanelOpen}
+        onClose={closeAllPanels}
+        panelWidth={PANEL_WIDTH}
+      />
+
+      {/* Panel Toggle Buttons - accessible from all tabs */}
+      <PanelToggles
+        onQuestPress={toggleQuestPanel}
+        onHeroPress={toggleHeroPanel}
+        questPanelOpen={isQuestPanelOpen}
+        heroPanelOpen={isHeroPanelOpen}
+      />
+
+      {/* Drag Overlay - shows dragged items */}
+      <DragOverlay />
     </View>
   );
 }
@@ -82,6 +125,7 @@ function TabIcon({ name, color }: { name: string; color: string }) {
     map: '🗺️',
     quest: '⚔️',
     cards: '🎴',
+    stash: '📦',
     shop: '🏪',
     leaderboard: '🏆',
     profile: '👤',

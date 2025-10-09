@@ -3,6 +3,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FirebaseProvider } from '@/lib/firebase-context';
+import { DragDropProvider } from '@/contexts/DragDropContext';
+import { PanelManagerProvider } from '@/contexts/PanelManagerContext';
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
@@ -47,31 +49,35 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <FirebaseProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: '#1a1a2e' }
-              }}
-            >
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-              <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
-              <Stack.Screen name="character/create" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="battle/[id]"
-                options={{
-                  presentation: 'fullScreenModal',
-                  animation: 'fade'
-                }}
-              />
-              <Stack.Screen
-                name="quest/[id]"
-                options={{
-                  presentation: 'modal'
-                }}
-              />
-            </Stack>
+            <DragDropProvider>
+              <PanelManagerProvider>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: '#1a1a2e' }
+                  }}
+                >
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+                  <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
+                  <Stack.Screen name="character/create" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="battle/[id]"
+                    options={{
+                      presentation: 'fullScreenModal',
+                      animation: 'fade'
+                    }}
+                  />
+                  <Stack.Screen
+                    name="quest/[id]"
+                    options={{
+                      presentation: 'modal'
+                    }}
+                  />
+                </Stack>
+              </PanelManagerProvider>
+            </DragDropProvider>
           </FirebaseProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

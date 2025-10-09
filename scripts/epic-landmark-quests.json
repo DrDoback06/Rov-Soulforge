@@ -1,0 +1,650 @@
+[
+  {
+    "id": "quest_stonehenge_guardian",
+    "type": "landmark",
+    "difficulty": "legendary",
+    "title": "Guardian of the Ancient Stones",
+    "description": "An ancient stone golem has awakened at Stonehenge. Defeat it to claim the Druid's Crown.",
+    "lore": "For millennia, the Guardian has slumbered beneath Stonehenge, protecting secrets of the druids. Only the worthy may challenge this ancient protector and claim its legendary treasures.",
+    "location": {
+      "latitude": 51.1789,
+      "longitude": -1.8262,
+      "name": "Stonehenge",
+      "type": "landmark"
+    },
+    "objectives": [
+      {
+        "id": "approach",
+        "type": "travel",
+        "description": "Approach Stonehenge",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "battle",
+        "type": "battle",
+        "description": "Defeat the Stone Guardian",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 5000,
+      "xp": 10000,
+      "items": [
+        {
+          "id": "druids_crown",
+          "type": "equipment",
+          "rarity": "legendary",
+          "quantity": 1
+        },
+        {
+          "id": "ancient_stone_card",
+          "type": "card",
+          "rarity": "epic",
+          "quantity": 3
+        }
+      ],
+      "titles": ["Stone Breaker"],
+      "badges": ["guardian_slayer"]
+    },
+    "requiredLevel": 20,
+    "recommendedLevel": 25,
+    "isLegendary": true,
+    "isBoss": true,
+    "icon": "🗿",
+    "color": "#8B7355",
+    "pulseEffect": true,
+    "tags": ["combat", "legendary", "landmark", "boss"]
+  },
+  {
+    "id": "quest_tower_london_ravens",
+    "type": "landmark",
+    "difficulty": "epic",
+    "title": "The Raven's Prophecy",
+    "description": "The legendary ravens of the Tower have spoken of a coming darkness. Investigate the tower's secrets.",
+    "lore": "Legend says that if the ravens ever leave the Tower of London, the kingdom will fall. The Raven Master has sensed dark magic disturbing the birds. Uncover the truth before it's too late.",
+    "location": {
+      "latitude": 51.5081,
+      "longitude": -0.0759,
+      "name": "Tower of London",
+      "type": "landmark"
+    },
+    "chainInfo": {
+      "chainId": "tower_mysteries",
+      "chainName": "Mysteries of the Crown",
+      "position": 1,
+      "totalQuests": 3,
+      "nextQuestId": "quest_crown_jewels"
+    },
+    "objectives": [
+      {
+        "id": "visit_tower",
+        "type": "travel",
+        "description": "Enter the Tower of London",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "find_ravens",
+        "type": "interact",
+        "description": "Locate all 7 ravens",
+        "target": 7,
+        "current": 0
+      },
+      {
+        "id": "defeat_shadow",
+        "type": "battle",
+        "description": "Defeat the Shadow Wraith",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 3000,
+      "xp": 5000,
+      "items": [
+        {
+          "id": "ravens_feather",
+          "type": "equipment",
+          "rarity": "rare",
+          "quantity": 1
+        }
+      ]
+    },
+    "requiredLevel": 15,
+    "recommendedLevel": 18,
+    "isLegendary": false,
+    "isBoss": false,
+    "icon": "🦅",
+    "color": "#000000",
+    "pulseEffect": true,
+    "tags": ["exploration", "story", "landmark", "chain"]
+  },
+  {
+    "id": "quest_ben_nevis_summit",
+    "type": "landmark",
+    "difficulty": "epic",
+    "title": "Conqueror of the Peak",
+    "description": "Climb Ben Nevis and defeat the Ice Titan at the summit.",
+    "lore": "At the highest peak in Britain, an ancient Ice Titan has made its home. Only the bravest adventurers dare challenge this frozen colossus in its mountain domain.",
+    "location": {
+      "latitude": 56.7969,
+      "longitude": -5.0034,
+      "name": "Ben Nevis Summit",
+      "type": "natural"
+    },
+    "objectives": [
+      {
+        "id": "climb",
+        "type": "fitness",
+        "description": "Climb to the summit",
+        "target": 1000,
+        "current": 0,
+        "metadata": { "activityType": "hiking", "elevationGain": 1000 }
+      },
+      {
+        "id": "titan_battle",
+        "type": "battle",
+        "description": "Defeat the Ice Titan",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 4500,
+      "xp": 8000,
+      "items": [
+        {
+          "id": "frost_axe",
+          "type": "equipment",
+          "rarity": "epic",
+          "quantity": 1
+        },
+        {
+          "id": "ice_titan_card",
+          "type": "card",
+          "rarity": "legendary",
+          "quantity": 1
+        }
+      ],
+      "titles": ["Peak Conqueror"],
+      "badges": ["summit_master"]
+    },
+    "requiredLevel": 18,
+    "recommendedLevel": 22,
+    "isLegendary": false,
+    "isBoss": true,
+    "icon": "🏔️",
+    "color": "#E0F7FA",
+    "pulseEffect": true,
+    "tags": ["fitness", "combat", "landmark", "boss", "hiking"]
+  },
+  {
+    "id": "quest_edinburgh_castle_ghost",
+    "type": "landmark",
+    "difficulty": "hard",
+    "title": "The Phantom Piper",
+    "description": "Investigate the haunting music echoing through Edinburgh Castle's dungeons.",
+    "lore": "For centuries, the sound of phantom bagpipes has been heard in the tunnels beneath Edinburgh Castle. Many have entered seeking the source, but few have returned unchanged.",
+    "location": {
+      "latitude": 55.9486,
+      "longitude": -3.1999,
+      "name": "Edinburgh Castle",
+      "type": "landmark"
+    },
+    "objectives": [
+      {
+        "id": "enter_dungeon",
+        "type": "travel",
+        "description": "Enter the castle dungeons",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "find_piper",
+        "type": "interact",
+        "description": "Follow the music to its source",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "free_ghost",
+        "type": "battle",
+        "description": "Free the Phantom Piper's spirit",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 2500,
+      "xp": 4000,
+      "items": [
+        {
+          "id": "ghostly_pipes",
+          "type": "equipment",
+          "rarity": "rare",
+          "quantity": 1
+        },
+        {
+          "id": "spectral_card",
+          "type": "card",
+          "rarity": "rare",
+          "quantity": 2
+        }
+      ],
+      "titles": ["Ghost Whisperer"]
+    },
+    "requiredLevel": 12,
+    "recommendedLevel": 15,
+    "isLegendary": false,
+    "isBoss": false,
+    "icon": "👻",
+    "color": "#9C27B0",
+    "pulseEffect": true,
+    "tags": ["story", "ghost", "landmark", "exploration"]
+  },
+  {
+    "id": "quest_lake_district_dragon",
+    "type": "landmark",
+    "difficulty": "legendary",
+    "title": "The Lake Dragon's Hoard",
+    "description": "A dragon sleeps beneath Derwentwater. Brave its lair for legendary treasure.",
+    "lore": "Ancient texts speak of a great wyrm that made its lair beneath the deepest lake in England. Its hoard is said to contain artifacts from a forgotten age, guarded by the dragon's eternal slumber... until now.",
+    "location": {
+      "latitude": 54.5784,
+      "longitude": -3.1335,
+      "name": "Derwentwater, Lake District",
+      "type": "natural"
+    },
+    "objectives": [
+      {
+        "id": "kayak_center",
+        "type": "fitness",
+        "description": "Kayak to the center of the lake",
+        "target": 500,
+        "current": 0,
+        "metadata": { "activityType": "kayaking", "distance": 500 }
+      },
+      {
+        "id": "dive_lair",
+        "type": "interact",
+        "description": "Dive to the dragon's lair",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "dragon_battle",
+        "type": "battle",
+        "description": "Awaken and defeat the Lake Dragon",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 10000,
+      "xp": 15000,
+      "items": [
+        {
+          "id": "dragons_scale_armor",
+          "type": "equipment",
+          "rarity": "legendary",
+          "quantity": 1
+        },
+        {
+          "id": "ancient_dragon_card",
+          "type": "card",
+          "rarity": "legendary",
+          "quantity": 2
+        },
+        {
+          "id": "wyrm_treasure_pack",
+          "type": "consumable",
+          "rarity": "legendary",
+          "quantity": 1
+        }
+      ],
+      "titles": ["Dragonslayer", "Lake Conqueror"],
+      "badges": ["legendary_hunter", "dragon_master"]
+    },
+    "requiredLevel": 25,
+    "recommendedLevel": 30,
+    "isLegendary": true,
+    "isBoss": true,
+    "maxPlayers": 4,
+    "icon": "🐉",
+    "color": "#D32F2F",
+    "pulseEffect": true,
+    "tags": ["combat", "legendary", "boss", "fitness", "water", "social"]
+  },
+  {
+    "id": "quest_yorkshire_dales_giant",
+    "type": "landmark",
+    "difficulty": "epic",
+    "title": "Trail of the Hill Giant",
+    "description": "A giant has been spotted roaming the Yorkshire Dales. Track and confront this ancient being.",
+    "lore": "In the mists of the Yorkshire Dales, where sheep graze and ancient paths wind through endless hills, a giant from the old times has awakened. Its footsteps shake the earth, and its presence draws adventurers from far and wide.",
+    "location": {
+      "latitude": 54.2167,
+      "longitude": -2.0833,
+      "name": "Yorkshire Dales National Park",
+      "type": "natural"
+    },
+    "objectives": [
+      {
+        "id": "hike_trail",
+        "type": "fitness",
+        "description": "Hike the Giant's Trail",
+        "target": 5000,
+        "current": 0,
+        "metadata": { "activityType": "hiking", "distance": 5000 }
+      },
+      {
+        "id": "find_footprints",
+        "type": "interact",
+        "description": "Find the giant's footprints",
+        "target": 5,
+        "current": 0
+      },
+      {
+        "id": "giant_challenge",
+        "type": "battle",
+        "description": "Challenge the Hill Giant",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 4000,
+      "xp": 7000,
+      "items": [
+        {
+          "id": "giants_club",
+          "type": "equipment",
+          "rarity": "epic",
+          "quantity": 1
+        },
+        {
+          "id": "hill_giant_card",
+          "type": "card",
+          "rarity": "epic",
+          "quantity": 1
+        }
+      ],
+      "titles": ["Giant Slayer"],
+      "badges": ["dales_explorer"]
+    },
+    "requiredLevel": 16,
+    "recommendedLevel": 20,
+    "isLegendary": false,
+    "isBoss": true,
+    "icon": "🗿",
+    "color": "#795548",
+    "pulseEffect": true,
+    "tags": ["fitness", "combat", "landmark", "hiking", "boss"]
+  },
+  {
+    "id": "quest_hadrians_wall_legion",
+    "type": "landmark",
+    "difficulty": "hard",
+    "title": "The Lost Legion",
+    "description": "Ghostly Roman soldiers march along Hadrian's Wall. Uncover their eternal mission.",
+    "lore": "The IX Legion vanished from history along Hadrian's Wall. Now, their spirits march eternally, seeking to complete their final mission. Only by understanding their quest can you set them free.",
+    "location": {
+      "latitude": 55.0244,
+      "longitude": -2.6055,
+      "name": "Hadrian's Wall",
+      "type": "landmark"
+    },
+    "chainInfo": {
+      "chainId": "roman_mysteries",
+      "chainName": "Echoes of Rome",
+      "position": 1,
+      "totalQuests": 4,
+      "nextQuestId": "quest_roman_fort"
+    },
+    "objectives": [
+      {
+        "id": "walk_wall",
+        "type": "fitness",
+        "description": "Walk along Hadrian's Wall",
+        "target": 2000,
+        "current": 0,
+        "metadata": { "activityType": "walking", "distance": 2000 }
+      },
+      {
+        "id": "find_spirits",
+        "type": "interact",
+        "description": "Locate the ghostly legion",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "complete_mission",
+        "type": "battle",
+        "description": "Help complete their final mission",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 3000,
+      "xp": 5000,
+      "items": [
+        {
+          "id": "roman_gladius",
+          "type": "equipment",
+          "rarity": "rare",
+          "quantity": 1
+        },
+        {
+          "id": "legion_card",
+          "type": "card",
+          "rarity": "rare",
+          "quantity": 2
+        }
+      ],
+      "titles": ["Legionnaire"]
+    },
+    "requiredLevel": 14,
+    "recommendedLevel": 17,
+    "isLegendary": false,
+    "isBoss": false,
+    "icon": "⚔️",
+    "color": "#C62828",
+    "pulseEffect": true,
+    "tags": ["story", "history", "fitness", "chain", "walking"]
+  },
+  {
+    "id": "quest_cotswolds_faerie",
+    "type": "landmark",
+    "difficulty": "medium",
+    "title": "The Faerie Ring Dance",
+    "description": "Join the faerie folk's moonlight dance in a secret Cotswolds grove.",
+    "lore": "Deep in the Cotswolds, where bluebells carpet ancient woodlands, the fae still dance beneath the moon. Those pure of heart may join their revelry and receive their blessing.",
+    "location": {
+      "latitude": 51.8330,
+      "longitude": -1.8433,
+      "name": "Cotswolds Woodland",
+      "type": "natural"
+    },
+    "objectives": [
+      {
+        "id": "find_grove",
+        "type": "travel",
+        "description": "Find the hidden faerie grove",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "gather_flowers",
+        "type": "collect",
+        "description": "Gather moonflowers",
+        "target": 10,
+        "current": 0
+      },
+      {
+        "id": "dance_ritual",
+        "type": "interact",
+        "description": "Complete the dance ritual",
+        "target": 1,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 1500,
+      "xp": 2500,
+      "items": [
+        {
+          "id": "faerie_dust",
+          "type": "consumable",
+          "rarity": "uncommon",
+          "quantity": 5
+        },
+        {
+          "id": "faerie_card",
+          "type": "card",
+          "rarity": "uncommon",
+          "quantity": 2
+        }
+      ],
+      "titles": ["Friend of Fae"]
+    },
+    "requiredLevel": 8,
+    "recommendedLevel": 10,
+    "isLegendary": false,
+    "isBoss": false,
+    "icon": "🧚",
+    "color": "#F8BBD0",
+    "pulseEffect": true,
+    "tags": ["exploration", "peaceful", "story", "nature"]
+  },
+  {
+    "id": "quest_peak_district_pub_crawl",
+    "type": "social",
+    "difficulty": "medium",
+    "title": "The Legendary Pub Crawl",
+    "description": "Visit 5 historic Peak District pubs and defeat their guardian spirits for epic loot.",
+    "lore": "The old pubs of the Peak District harbor more than ale and stories. Each has a guardian spirit that challenges worthy adventurers. Complete the crawl to earn the title of Pub Champion!",
+    "location": {
+      "latitude": 53.3500,
+      "longitude": -1.8333,
+      "name": "Peak District",
+      "type": "poi"
+    },
+    "objectives": [
+      {
+        "id": "green_dragon",
+        "type": "travel",
+        "description": "Visit The Green Dragon",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "prancing_pony",
+        "type": "travel",
+        "description": "Visit The Prancing Pony",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "battle_guardians",
+        "type": "battle",
+        "description": "Defeat all pub guardians",
+        "target": 5,
+        "current": 0
+      }
+    ],
+    "rewards": {
+      "gold": 2000,
+      "xp": 3500,
+      "items": [
+        {
+          "id": "champions_tankard",
+          "type": "equipment",
+          "rarity": "rare",
+          "quantity": 1
+        },
+        {
+          "id": "ale_master_card",
+          "type": "card",
+          "rarity": "uncommon",
+          "quantity": 3
+        }
+      ],
+      "titles": ["Pub Champion"],
+      "badges": ["ale_master"]
+    },
+    "requiredLevel": 10,
+    "recommendedLevel": 12,
+    "maxPlayers": 4,
+    "isLegendary": false,
+    "isBoss": false,
+    "icon": "🍺",
+    "color": "#FFA726",
+    "pulseEffect": false,
+    "tags": ["social", "exploration", "pub", "combat", "fun"]
+  },
+  {
+    "id": "quest_london_thames_serpent",
+    "type": "event",
+    "difficulty": "legendary",
+    "title": "The Thames Serpent Awakens",
+    "description": "A massive serpent has emerged from the Thames! Team up with other players to drive it back.",
+    "lore": "London's darkest legend has come to life. The ancient serpent that supposedly dwells in the Thames has risen, threatening the entire city. This is a call to all adventurers - only together can this threat be vanquished!",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "name": "River Thames, London",
+      "type": "landmark"
+    },
+    "objectives": [
+      {
+        "id": "reach_river",
+        "type": "travel",
+        "description": "Get to the Thames riverbank",
+        "target": 1,
+        "current": 0
+      },
+      {
+        "id": "damage_serpent",
+        "type": "battle",
+        "description": "Deal damage to the serpent (global)",
+        "target": 1000000,
+        "current": 0,
+        "metadata": { "isGlobal": true }
+      }
+    ],
+    "rewards": {
+      "gold": 7500,
+      "xp": 12000,
+      "items": [
+        {
+          "id": "serpent_scale_shield",
+          "type": "equipment",
+          "rarity": "legendary",
+          "quantity": 1
+        },
+        {
+          "id": "thames_serpent_card",
+          "type": "card",
+          "rarity": "legendary",
+          "quantity": 1
+        }
+      ],
+      "titles": ["Serpent Slayer", "Defender of London"],
+      "badges": ["world_savior"]
+    },
+    "requiredLevel": 1,
+    "recommendedLevel": 20,
+    "maxPlayers": 100,
+    "isLegendary": true,
+    "isBoss": true,
+    "isSeasonal": false,
+    "duration": 180,
+    "icon": "🐍",
+    "color": "#00796B",
+    "pulseEffect": true,
+    "tags": ["event", "social", "boss", "legendary", "world_event", "combat"]
+  }
+]

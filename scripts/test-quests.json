@@ -1,0 +1,145 @@
+[
+  {
+    "title": "Tower of London Mystery",
+    "description": "Investigate strange occurrences at the historic Tower of London. Rumors speak of ghostly apparitions and hidden treasure.",
+    "location": { "latitude": 51.5081, "longitude": -0.0759 },
+    "rarity": "Rare",
+    "rewards": [
+      { "type": "gold", "amount": 150 },
+      { "type": "xp", "amount": 300 }
+    ],
+    "requirements": { "minLevel": 1 }
+  },
+  {
+    "title": "Thames River Challenge",
+    "description": "A water elemental has been spotted near the Thames. Defeat it to protect the city!",
+    "location": { "latitude": 51.5074, "longitude": -0.1278 },
+    "rarity": "Epic",
+    "rewards": [
+      { "type": "gold", "amount": 250 },
+      { "type": "xp", "amount": 500 }
+    ],
+    "requirements": { "minLevel": 3 }
+  },
+  {
+    "title": "Central Park Adventure",
+    "description": "Explore Central Park and discover ancient runes hidden beneath the trees.",
+    "location": { "latitude": 40.7829, "longitude": -73.9654 },
+    "rarity": "Uncommon",
+    "rewards": [
+      { "type": "gold", "amount": 100 },
+      { "type": "xp", "amount": 200 }
+    ],
+    "requirements": { "minLevel": 1 }
+  },
+  {
+    "title": "Brooklyn Bridge Battle",
+    "description": "A gang of goblins has taken over the Brooklyn Bridge. Clear them out!",
+    "location": { "latitude": 40.7061, "longitude": -73.9969 },
+    "rarity": "Rare",
+    "rewards": [
+      { "type": "gold", "amount": 180 },
+      { "type": "xp", "amount": 350 }
+    ],
+    "requirements": { "minLevel": 2 }
+  },
+  {
+    "title": "Tokyo Tower Showdown",
+    "description": "A powerful yokai has appeared at Tokyo Tower. Brave adventurers needed!",
+    "location": { "latitude": 35.6586, "longitude": 139.7454 },
+    "rarity": "Epic",
+    "rewards": [
+      { "type": "gold", "amount": 300 },
+      { "type": "xp", "amount": 600 }
+    ],
+    "requirements": { "minLevel": 4 }
+  },
+  {
+    "title": "Shibuya Crossing Quest",
+    "description": "Find the lost shrine hidden in the bustling Shibuya district.",
+    "location": { "latitude": 35.6595, "longitude": 139.7004 },
+    "rarity": "Common",
+    "rewards": [
+      { "type": "gold", "amount": 80 },
+      { "type": "xp", "amount": 150 }
+    ],
+    "requirements": { "minLevel": 1 }
+  },
+  {
+    "title": "Sydney Opera House Mystery",
+    "description": "Strange melodies emanate from the Opera House at night. Investigate!",
+    "location": { "latitude": -33.8568, "longitude": 151.2153 },
+    "rarity": "Rare",
+    "rewards": [
+      { "type": "gold", "amount": 200 },
+      { "type": "xp", "amount": 400 }
+    ],
+    "requirements": { "minLevel": 2 }
+  },
+  {
+    "title": "Bondi Beach Challenge",
+    "description": "Sea creatures have been spotted near Bondi Beach. Drive them back!",
+    "location": { "latitude": -33.8915, "longitude": 151.2767 },
+    "rarity": "Uncommon",
+    "rewards": [
+      { "type": "gold", "amount": 120 },
+      { "type": "xp", "amount": 250 }
+    ],
+    "requirements": { "minLevel": 1 }
+  },
+  {
+    "title": "Eiffel Tower Enigma",
+    "description": "A magical anomaly has appeared at the top of the Eiffel Tower.",
+    "location": { "latitude": 48.8584, "longitude": 2.2945 },
+    "rarity": "Legendary",
+    "rewards": [
+      { "type": "gold", "amount": 500 },
+      { "type": "xp", "amount": 1000 }
+    ],
+    "requirements": { "minLevel": 5 }
+  },
+  {
+    "title": "Louvre Treasure Hunt",
+    "description": "A secret chamber has been discovered beneath the Louvre. Explore it!",
+    "location": { "latitude": 48.8606, "longitude": 2.3376 },
+    "rarity": "Epic",
+    "rewards": [
+      { "type": "gold", "amount": 280 },
+      { "type": "xp", "amount": 550 }
+    ],
+    "requirements": { "minLevel": 3 }
+  },
+  {
+    "title": "Alpine Dragon Encounter",
+    "description": "A mountain dragon has been spotted in the Swiss Alps. Only the bravest should accept!",
+    "location": { "latitude": 46.5197, "longitude": 8.7266 },
+    "rarity": "Legendary",
+    "rewards": [
+      { "type": "gold", "amount": 600 },
+      { "type": "xp", "amount": 1200 }
+    ],
+    "requirements": { "minLevel": 6 }
+  },
+  {
+    "title": "Yosemite Trail Quest",
+    "description": "Follow the ancient trail markers to discover a hidden grove in Yosemite.",
+    "location": { "latitude": 37.8651, "longitude": -119.5383 },
+    "rarity": "Rare",
+    "rewards": [
+      { "type": "gold", "amount": 220 },
+      { "type": "xp", "amount": 450 }
+    ],
+    "requirements": { "minLevel": 2 }
+  },
+  {
+    "title": "Hawaiian Beach Mystery",
+    "description": "Tiki statues along the beach have started glowing. Investigate this phenomenon!",
+    "location": { "latitude": 21.2793, "longitude": -157.8293 },
+    "rarity": "Epic",
+    "rewards": [
+      { "type": "gold", "amount": 320 },
+      { "type": "xp", "amount": 650 }
+    ],
+    "requirements": { "minLevel": 4 }
+  }
+]
