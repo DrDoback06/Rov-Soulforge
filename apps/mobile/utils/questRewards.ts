@@ -1,7 +1,7 @@
 import { doc, updateDoc, getDoc, collection, addDoc, increment } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import type { QuestReward } from '@/types/quest-enhanced';
-import type { Card } from '@rov/types';
+import type { Card, GameCard, Rarity } from '@rov/types';
 
 /**
  * Quest Reward Distribution System
@@ -135,6 +135,227 @@ function rollItemDrops(rewards: QuestReward): Card[] {
 }
 
 /**
+ * Generate card rewards for quest completion
+ */
+export function generateCardRewards(
+  questLevel: number,
+  questRarity: string,
+  magicFind: number = 0
+): GameCard[] {
+  const cards: GameCard[] = [];
+  
+  // Base chance for card drops
+  let cardDropChance = 0.3; // 30% base chance
+  
+  // Increase chance based on quest level
+  cardDropChance += questLevel * 0.05; // +5% per level
+  
+  // Magic find bonus
+  cardDropChance += magicFind / 100; // Magic find as percentage
+  
+  // Roll for card drops
+  if (Math.random() < cardDropChance) {
+    const numCards = Math.floor(Math.random() * 3) + 1; // 1-3 cards
+    
+    for (let i = 0; i < numCards; i++) {
+      const card = generateRandomCard(questLevel, questRarity);
+      if (card) {
+        cards.push(card);
+      }
+    }
+  }
+  
+  return cards;
+}
+
+/**
+ * Generate a random card based on quest parameters
+ */
+function generateRandomCard(questLevel: number, questRarity: string): GameCard | null {
+  // Determine card rarity based on quest rarity
+  const rarityWeights = getRarityWeights(questRarity);
+  const selectedRarity = selectRarityByWeight(rarityWeights);
+  
+  // Generate card based on rarity
+  const cardTemplates = getCardTemplates(selectedRarity, questLevel);
+  const template = cardTemplates[Math.floor(Math.random() * cardTemplates.length)];
+  
+  return {
+    id: `${template.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    name: template.name,
+    type: template.type,
+    rarity: selectedRarity,
+    image: template.image,
+    description: template.description,
+    usableInApp: true,
+    equipmentSlot: template.equipmentSlot,
+    statBonuses: template.statBonuses,
+    skillEffect: template.skillEffect,
+    level: 1,
+    count: 1,
+    location: 'inventory'
+  };
+}
+
+/**
+ * Get rarity weights based on quest rarity
+ */
+function getRarityWeights(questRarity: string): Record<Rarity, number> {
+  switch (questRarity.toLowerCase()) {
+    case 'epic':
+      return {
+        Common: 0.1,
+        Uncommon: 0.2,
+        Rare: 0.4,
+        Epic: 0.25,
+        Legendary: 0.05
+      };
+    case 'rare':
+      return {
+        Common: 0.2,
+        Uncommon: 0.3,
+        Rare: 0.35,
+        Epic: 0.1,
+        Legendary: 0.05
+      };
+    case 'uncommon':
+      return {
+        Common: 0.4,
+        Uncommon: 0.35,
+        Rare: 0.2,
+        Epic: 0.05,
+        Legendary: 0.0
+      };
+    default:
+      return {
+        Common: 0.6,
+        Uncommon: 0.3,
+        Rare: 0.1,
+        Epic: 0.0,
+        Legendary: 0.0
+      };
+  }
+}
+
+/**
+ * Select rarity based on weights
+ */
+function selectRarityByWeight(weights: Record<Rarity, number>): Rarity {
+  const random = Math.random();
+  let cumulative = 0;
+  
+  for (const [rarity, weight] of Object.entries(weights)) {
+    cumulative += weight;
+    if (random <= cumulative) {
+      return rarity as Rarity;
+    }
+  }
+  
+  return 'Common';
+}
+
+/**
+ * Get card templates for a given rarity and level
+ */
+function getCardTemplates(rarity: Rarity, level: number) {
+  const baseStats = Math.floor(level * 2);
+  
+  switch (rarity) {
+    case 'Common':
+      return [
+        {
+          id: 'iron_sword',
+          name: 'Iron Sword',
+          type: 'Equipment' as const,
+          image: '⚔️',
+          description: 'A sturdy iron sword.',
+          equipmentSlot: 'Weapon' as const,
+          statBonuses: { attack: baseStats }
+        },
+        {
+          id: 'leather_armor',
+          name: 'Leather Armor',
+          type: 'Equipment' as const,
+          image: '🦺',
+          description: 'Basic leather protection.',
+          equipmentSlot: 'Armor' as const,
+          statBonuses: { defense: baseStats }
+        }
+      ];
+    case 'Uncommon':
+      return [
+        {
+          id: 'steel_sword',
+          name: 'Steel Sword',
+          type: 'Equipment' as const,
+          image: '⚔️',
+          description: 'A well-crafted steel sword.',
+          equipmentSlot: 'Weapon' as const,
+          statBonuses: { attack: baseStats * 1.5, strength: baseStats * 0.5 }
+        },
+        {
+          id: 'healing_potion',
+          name: 'Healing Potion',
+          type: 'Consumable' as const,
+          image: '🧪',
+          description: 'Restores health when consumed.'
+        }
+      ];
+    case 'Rare':
+      return [
+        {
+          id: 'fireball_spell',
+          name: 'Fireball',
+          type: 'Skill' as const,
+          image: '🔥',
+          description: 'Launches a ball of fire at enemies.',
+          cost: 3,
+          skillEffect: {
+            type: 'Damage' as const,
+            value: baseStats * 2,
+            target: 'Enemy' as const
+          }
+        }
+      ];
+    case 'Epic':
+      return [
+        {
+          id: 'legendary_sword',
+          name: 'Excalibur',
+          type: 'Equipment' as const,
+          image: '⚔️',
+          description: 'The legendary sword of kings.',
+          equipmentSlot: 'Weapon' as const,
+          statBonuses: { 
+            attack: baseStats * 3, 
+            strength: baseStats, 
+            hp: baseStats * 2 
+          }
+        }
+      ];
+    case 'Legendary':
+      return [
+        {
+          id: 'divine_sword',
+          name: 'Divine Blade',
+          type: 'Equipment' as const,
+          image: '⚔️',
+          description: 'A blade blessed by the gods.',
+          equipmentSlot: 'Weapon' as const,
+          statBonuses: { 
+            attack: baseStats * 5, 
+            strength: baseStats * 2, 
+            hp: baseStats * 3,
+            mana: baseStats * 2
+          }
+        }
+      ];
+    default:
+      return [];
+  }
+}
+
+/**
  * Distribute rewards to player
  */
 export async function distributeQuestRewards(
@@ -160,18 +381,27 @@ export async function distributeQuestRewards(
 
     // Roll for item drops
     const droppedItems = rollItemDrops(finalRewards);
+    
+    // Generate card rewards
+    const cardRewards = generateCardRewards(
+      rewards.level || 1,
+      rewards.rarity || 'common',
+      finalRewards.magicFind || 0
+    );
 
     // Check inventory capacity
     const inventorySnapshot = await getDoc(doc(db, 'inventory', userId));
     const currentInventory = inventorySnapshot.exists() ? inventorySnapshot.data().cards || [] : [];
 
-    const inventoryFull = currentInventory.length + droppedItems.length > INVENTORY_CAPACITY;
+    const totalNewItems = droppedItems.length + cardRewards.length;
+    const inventoryFull = currentInventory.length + totalNewItems > INVENTORY_CAPACITY;
 
     if (inventoryFull) {
       // Not enough space - will need to handle overflow
       const availableSpace = INVENTORY_CAPACITY - currentInventory.length;
-      const itemsToAdd = droppedItems.slice(0, availableSpace);
-      const overflowItems = droppedItems.slice(availableSpace);
+      const allNewItems = [...droppedItems, ...cardRewards];
+      const itemsToAdd = allNewItems.slice(0, availableSpace);
+      const overflowItems = allNewItems.slice(availableSpace);
 
       // Add what we can
       if (itemsToAdd.length > 0) {
@@ -193,19 +423,20 @@ export async function distributeQuestRewards(
         overflowItems
       };
     } else {
-      // Add all items
+      // Add all items and cards
+      const allNewItems = [...droppedItems, ...cardRewards];
       await updateDoc(doc(db, 'inventory', userId), {
-        cards: [...currentInventory, ...droppedItems]
+        cards: [...currentInventory, ...allNewItems]
       });
 
-      console.log(`🎁 Distributed ${droppedItems.length} items to inventory`);
+      console.log(`🎁 Distributed ${droppedItems.length} items and ${cardRewards.length} cards to inventory`);
 
       return {
         success: true,
         rewards: {
           gold: finalRewards.gold,
           xp: finalRewards.xp,
-          items: droppedItems
+          items: allNewItems
         },
         inventoryFull: false
       };

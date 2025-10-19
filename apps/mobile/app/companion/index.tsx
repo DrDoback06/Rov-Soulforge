@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoid
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useCharacter } from '@/hooks/useCharacter';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 
 /**
  * AI Companion Screen

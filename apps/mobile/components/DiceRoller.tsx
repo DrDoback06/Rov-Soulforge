@@ -9,7 +9,7 @@ import Animated, {
   interpolate,
   Easing
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 import type { DiceRoll } from '@rov/types';
 
 /**

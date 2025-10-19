@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, Alert, Platform, Pressable, Text } from 'react-native';
-import * as Location from 'expo-location';
+import * as Location from '@/lib/location';
 import { router } from 'expo-router';
 import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { useFirebase } from '@/lib/firebase-context';
@@ -18,6 +18,7 @@ import { MultiStopNavigationHUD } from '@/components/MultiStopNavigationHUD';
 import { QuestCompletionModal } from '@/components/QuestCompletionModal';
 import { QuestAbandonModal } from '@/components/QuestAbandonModal';
 import { FloatingQuestDetails } from '@/components/FloatingQuestDetails';
+import { QuestCardPlacement } from '@/components/QuestCardPlacement';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuestProximity } from '@/hooks/useQuestProximity';
 import { useQuestBattleListener } from '@/hooks/useQuestBattleListener';
@@ -93,6 +94,10 @@ export default function MapScreen() {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [abandonQuest, setAbandonQuest] = useState<EnhancedQuest | null>(null);
   const [showAbandonModal, setShowAbandonModal] = useState(false);
+  
+  // Quest card placement
+  const [showQuestCardPlacement, setShowQuestCardPlacement] = useState(false);
+  const [questCardPlacementLocation, setQuestCardPlacementLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   
   // Derived player coordinates (needs to be defined early for hooks)
   const playerCoords = location ? {
@@ -672,6 +677,31 @@ export default function MapScreen() {
   };
 
   /**
+   * Handle Quest Card Placement
+   */
+  const handleQuestCardPlacement = () => {
+    if (!playerCoords) {
+      Alert.alert('Location Required', 'Please enable location services to place quest cards.');
+      return;
+    }
+    
+    setQuestCardPlacementLocation(playerCoords);
+    setShowQuestCardPlacement(true);
+  };
+
+  /**
+   * Handle Quest Created from Card
+   */
+  const handleQuestCreated = (questId: string) => {
+    setShowQuestCardPlacement(false);
+    setQuestCardPlacementLocation(null);
+    
+    // Refresh quest data to show the new quest
+    loadStaticQuests();
+    loadDynamicQuests();
+  };
+
+  /**
    * Accept Rewards and Complete Quest
    */
   const handleAcceptRewards = async () => {
@@ -822,6 +852,16 @@ export default function MapScreen() {
           onPress={handleSearchHere}
         />
       )}
+
+      {/* Quest Card Placement Button */}
+      <View style={styles.questCardButton}>
+        <Pressable
+          style={styles.questCardButtonPressable}
+          onPress={handleQuestCardPlacement}
+        >
+          <Text style={styles.questCardButtonText}>🎯 Place Quest Card</Text>
+        </Pressable>
+      </View>
 
       {/* DEV: Spoof Movement Controls */}
       <View style={styles.spoofControls}>
@@ -1017,6 +1057,19 @@ export default function MapScreen() {
           setAbandonQuest(null);
         }}
       />
+
+      {/* Quest Card Placement Modal */}
+      {questCardPlacementLocation && (
+        <QuestCardPlacement
+          visible={showQuestCardPlacement}
+          onClose={() => {
+            setShowQuestCardPlacement(false);
+            setQuestCardPlacementLocation(null);
+          }}
+          mapLocation={questCardPlacementLocation}
+          onQuestCreated={handleQuestCreated}
+        />
+      )}
     </View>
   );
 }
@@ -1085,6 +1138,29 @@ const styles = StyleSheet.create({
   directionText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: 'bold'
+  },
+  questCardButton: {
+    position: 'absolute',
+    bottom: 100,
+    right: 20,
+    zIndex: 1000
+  },
+  questCardButtonPressable: {
+    backgroundColor: '#4488ff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#2244cc',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4
+  },
+  questCardButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
     fontWeight: 'bold'
   }
 });

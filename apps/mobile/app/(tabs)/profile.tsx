@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Linki
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/hooks/useAuth';
 import { useCharacter } from '@/hooks/useCharacter';
+import { StravaConnection } from '@/components/StravaConnection';
 
 /**
  * Profile Tab - User profile and settings
@@ -10,7 +11,6 @@ import { useCharacter } from '@/hooks/useCharacter';
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { character, loading } = useCharacter();
-  const [stravaConnecting, setStravaConnecting] = useState(false);
 
   if (loading) {
     return (
@@ -109,26 +109,7 @@ export default function ProfileScreen() {
             </View>
 
             {/* Strava Integration */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Fitness Integration</Text>
-              <Text style={styles.sectionDescription}>
-                Connect your Strava account to earn rewards for real-world activities
-              </Text>
-              <Pressable
-                style={styles.stravaButton}
-                onPress={handleStravaConnect}
-                disabled={stravaConnecting}
-              >
-                <LinearGradient
-                  colors={['#fc4c02', '#e34402']}
-                  style={styles.stravaButtonGradient}
-                >
-                  <Text style={styles.stravaButtonText}>
-                    {stravaConnecting ? 'Connecting...' : '🚴 Connect Strava'}
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            </View>
+            <StravaConnection />
           </>
         )}
 
@@ -140,28 +121,6 @@ export default function ProfileScreen() {
     </View>
   );
 
-  async function handleStravaConnect() {
-    setStravaConnecting(true);
-    try {
-      const clientId = process.env.EXPO_PUBLIC_STRAVA_CLIENT_ID;
-      const redirectUri = process.env.EXPO_PUBLIC_STRAVA_REDIRECT_URI || 'realmofvalor://strava-callback';
-      const scope = 'read,activity:read_all';
-
-      const authUrl = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-
-      const supported = await Linking.canOpenURL(authUrl);
-      if (supported) {
-        await Linking.openURL(authUrl);
-      } else {
-        Alert.alert('Error', 'Unable to open Strava authorization');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to connect to Strava');
-      console.error(error);
-    } finally {
-      setStravaConnecting(false);
-    }
-  }
 }
 
 function getAlignmentColors(alignment: string): [string, string] {

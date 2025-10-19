@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signInAnonymously,
   signOut as firebaseSignOut,
+  getAuth,
   User
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Firestore } from 'firebase/firestore';
@@ -19,8 +20,8 @@ import type { Functions } from 'firebase/functions';
 interface FirebaseContextType {
   user: User | null;
   loading: boolean;
-  db: Firestore;
-  functions: Functions;
+  db: Firestore | null;
+  functions: Functions | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInAsGuest: () => Promise<void>;
@@ -44,9 +45,21 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('🔐 Firebase Provider - Setting up auth listener...');
 
-    // Listen to auth state changes
+    // Prefer provided auth, but fall back to on-demand instance
+    let authInstance = auth;
+    try {
+      if (!authInstance) {
+        authInstance = getAuth();
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not obtain Firebase Auth instance:', e);
+      setLoading(false);
+      return;
+    }
+
+    // Listen to auth state changes using the resolved instance
     const unsubscribe = onAuthStateChanged(
-      auth,
+      authInstance,
       (user) => {
         console.log('🔐 Auth state changed:');
         console.log('  - User:', user ? `${user.uid} (${user.email || 'anonymous'})` : 'null');
@@ -67,19 +80,27 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const a = auth ?? getAuth();
+    if (!a) throw new Error('Firebase Auth not available');
+    await signInWithEmailAndPassword(a, email, password);
   };
 
   const signUp = async (email: string, password: string) => {
-    return await createUserWithEmailAndPassword(auth, email, password);
+    const a = auth ?? getAuth();
+    if (!a) throw new Error('Firebase Auth not available');
+    return await createUserWithEmailAndPassword(a, email, password);
   };
 
   const signInAsGuest = async () => {
-    await signInAnonymously(auth);
+    const a = auth ?? getAuth();
+    if (!a) throw new Error('Firebase Auth not available');
+    await signInAnonymously(a);
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    const a = auth ?? getAuth();
+    if (!a) throw new Error('Firebase Auth not available');
+    await firebaseSignOut(a);
   };
 
   return (

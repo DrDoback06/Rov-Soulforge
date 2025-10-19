@@ -33,7 +33,8 @@
       "package": "com.realmofvalor.app"
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -57,7 +58,8 @@
     },
     "extra": {
       "router": {
-        "origin": false
+        "origin": false,
+        "root": "./app"
       },
       "eas": {
         "projectId": "your-project-id"
