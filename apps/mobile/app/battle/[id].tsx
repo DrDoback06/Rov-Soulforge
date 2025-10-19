@@ -252,10 +252,10 @@ function HandDisplay({
           disabled={!isMyTurn}
         >
           <LinearGradient
-            colors={getCardColors(card.deck)}
+            colors={getCardColors(card.type)}
             style={styles.handCardGradient}
           >
-            <Text style={styles.handCardMana}>⚡{card.manaCost || 0}</Text>
+            <Text style={styles.handCardMana}>⚡{card.cost || 0}</Text>
             <Text style={styles.handCardName} numberOfLines={2}>
               {card.name}
             </Text>
@@ -266,13 +266,15 @@ function HandDisplay({
   );
 }
 
-function getCardColors(deckType: string): [string, string] {
+function getCardColors(cardType: string): [string, string] {
   const colors: Record<string, [string, string]> = {
     Action: ['#ff4444', '#cc0000'],
     Skill: ['#4488ff', '#2244cc'],
-    Loot: ['#ffd700', '#cc8800']
+    Loot: ['#ffd700', '#cc8800'],
+    Quest: ['#44ff44', '#22cc22'],
+    Summon: ['#ff44ff', '#cc22cc']
   };
-  return colors[deckType] || ['#666666', '#444444'];
+  return colors[cardType] || ['#666666', '#444444'];
 }
 
 function TurnIndicator({ isMyTurn }: { isMyTurn: boolean }) {

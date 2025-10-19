@@ -7,36 +7,25 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// 1. Watch all files within the monorepo
+// 1) Watch monorepo
 config.watchFolders = [workspaceRoot];
 
-// 2. Let Metro know where to resolve packages and in what order
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
-  path.resolve(workspaceRoot, 'node_modules'),
-];
-
-// 3. Add explicit module resolution for @expo packages and React (pnpm monorepo fix)
+// 2) Map internal workspace packages
 config.resolver.extraNodeModules = {
-  '@expo/metro-runtime': path.resolve(workspaceRoot, 'node_modules/@expo/metro-runtime'),
-  'react': path.resolve(workspaceRoot, 'node_modules/react'),
-  'react-dom': path.resolve(workspaceRoot, 'node_modules/react-dom'),
-  'react-native': path.resolve(workspaceRoot, 'node_modules/react-native'),
-  'react-native-web': path.resolve(workspaceRoot, 'node_modules/react-native-web'),
+  '@rov/types': path.resolve(workspaceRoot, 'packages/types'),
+  '@rov/firebase': path.resolve(workspaceRoot, 'packages/firebase'),
+  '@rov/logic': path.resolve(workspaceRoot, 'packages/logic'),
 };
 
-// 4. Force single copy of React packages
-config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === 'react' || moduleName === 'react-dom' || moduleName === 'react-native' || moduleName === 'react-native-web') {
-    return {
-      filePath: path.resolve(workspaceRoot, 'node_modules', moduleName, 'index.js'),
-      type: 'sourceFile',
-    };
-  }
-  return context.resolveRequest(context, moduleName, platform);
-};
+// 3) Configure asset extensions (exclude audio to prevent jimp errors)
+const assetExts = config.resolver.assetExts.filter(
+  ext => !['mp3', 'wav', 'ogg', 'm4a', 'aac', 'mpeg', 'flac', 'aiff', 'wma'].includes(ext)
+);
 
-// 5. Allow hierarchical lookup for better compatibility
-config.resolver.disableHierarchicalLookup = false;
+// 4) Add source extensions including audio as source (not asset)
+const sourceExts = [...config.resolver.sourceExts, 'cjs', 'mjs', 'mp3', 'wav', 'ogg', 'm4a', 'aac', 'mpeg'];
+
+config.resolver.assetExts = assetExts;
+config.resolver.sourceExts = sourceExts;
 
 module.exports = config;

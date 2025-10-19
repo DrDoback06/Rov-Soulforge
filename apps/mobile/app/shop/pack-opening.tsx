@@ -11,7 +11,7 @@ import Animated, {
   Easing
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '@/lib/haptics';
 import { router } from 'expo-router';
 import type { CardDef, Rarity } from '@rov/types';
 

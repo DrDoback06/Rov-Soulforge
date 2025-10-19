@@ -76,6 +76,89 @@ export interface CardDef {
   };
 }
 
+// ============================================================================
+// Digital Game Card Types (for in-app usage)
+// ============================================================================
+
+export type GameCardType = 'Equipment' | 'Skill' | 'Companion' | 'Consumable' | 'Quest';
+
+export interface GameCard {
+  // Identity
+  id: string;
+  name: string;
+  type: GameCardType;
+  rarity: Rarity;
+  
+  // Visual
+  image: string; // emoji or image URL
+  description: string;
+  
+  // Game Mechanics
+  cost?: number; // Mana cost for skills
+  usableInApp: boolean; // false for physical-only cards
+  
+  // Equipment Stats (if type === 'Equipment')
+  equipmentSlot?: 'Weapon' | 'Armor' | 'Accessory' | 'Ring';
+  statBonuses?: {
+    strength?: number;
+    dexterity?: number;
+    intelligence?: number;
+    vitality?: number;
+    hp?: number;
+    mana?: number;
+    attack?: number;
+    defense?: number;
+  };
+  
+  // Skill Effects (if type === 'Skill')
+  skillEffect?: {
+    type: 'Damage' | 'Heal' | 'Buff' | 'Debuff' | 'Summon';
+    value: number;
+    target: 'Self' | 'Enemy' | 'All';
+    duration?: number; // turns
+  };
+  
+  // Upgrade System
+  level: number; // 1-10
+  upgradeRequirements?: {
+    gold: number;
+    materials: { itemId: string; count: number }[];
+  };
+  
+  // Ownership
+  count: number;
+  location: 'inventory' | 'stash' | 'equipped' | 'deck';
+  equippedSlot?: string; // if equipped
+}
+
+export interface QuestCard extends GameCard {
+  type: 'Quest';
+  
+  questData: {
+    title: string;
+    description: string;
+    objectives: QuestObjective[];
+    rewards: QuestRewards;
+    duration: number; // hours until expires
+    difficulty: 'Easy' | 'Medium' | 'Hard' | 'Epic';
+  };
+}
+
+export interface QuestObjective {
+  id: string;
+  type: 'battle' | 'fitness' | 'defend' | 'collect';
+  description: string;
+  target: number;
+  current: number;
+  completed: boolean;
+}
+
+export interface QuestRewards {
+  xp: number;
+  gold: number;
+  cards?: { cardId: string; rarity: Rarity }[];
+}
+
 export type StatScale = {
   stat: "atk" | "def" | "spd";
   factor: number;
@@ -160,6 +243,78 @@ export interface Battle {
     maxHp: number;
     counters?: Record<string, number>; // e.g., "armorPlates": 3
   };
+  // Enhanced battle data
+  createdAt: number;
+  updatedAt: number;
+  winner?: string; // character id of winner
+  battleSettings: {
+    maxTurns: number;
+    timeLimitMs: number;
+    allowSpectators: boolean;
+  };
+  playerStates: Record<string, BattlePlayerState>;
+  aiOpponent?: BattleAIState;
+}
+
+export interface BattlePlayerState {
+  characterId: string;
+  userId: string;
+  hp: number;
+  maxHp: number;
+  mana: number;
+  maxMana: number;
+  lives: number;
+  maxLives: number;
+  hand: string[]; // card instance ids
+  deck: string[]; // card instance ids
+  discard: string[]; // card instance ids
+  buffs: BattleBuff[];
+  debuffs: BattleDebuff[];
+  isActive: boolean;
+  hasPassed: boolean;
+  lastAction?: number; // timestamp
+}
+
+export interface BattleAIState {
+  aiId: string;
+  name: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Boss';
+  hp: number;
+  maxHp: number;
+  mana: number;
+  maxMana: number;
+  lives: number;
+  maxLives: number;
+  deck: string[]; // AI card templates
+  hand: string[]; // AI card instances
+  discard: string[]; // AI card instances
+  behavior: AIBehavior;
+  isActive: boolean;
+}
+
+export interface AIBehavior {
+  aggression: number; // 0-1, how likely to attack
+  defense: number; // 0-1, how likely to defend
+  cardPlay: number; // 0-1, how likely to play cards
+  targetPriority: 'weakest' | 'strongest' | 'random' | 'balanced';
+}
+
+export interface BattleBuff {
+  id: string;
+  name: string;
+  stat: 'atk' | 'def' | 'maxMana' | 'maxHp' | 'spd';
+  amount: number;
+  duration: number; // turns remaining
+  source: string; // card or effect that applied it
+}
+
+export interface BattleDebuff {
+  id: string;
+  name: string;
+  stat: 'atk' | 'def' | 'maxMana' | 'maxHp' | 'spd';
+  amount: number;
+  duration: number; // turns remaining
+  source: string; // card or effect that applied it
 }
 
 export interface StackItem {
@@ -176,6 +331,105 @@ export interface BattleLogEntry {
   t: number;
   msg: string;
   seed?: string; // RNG seed used
+}
+
+// ============================================================================
+// Battle Action Types
+// ============================================================================
+
+export type BattleAction = 
+  | PlayCardAction
+  | PassTurnAction
+  | SurrenderAction
+  | ResolveStackAction;
+
+export interface PlayCardAction {
+  type: 'playCard';
+  battleId: string;
+  playerId: string;
+  cardId: string;
+  targets?: string[]; // character ids
+  timestamp: number;
+}
+
+export interface PassTurnAction {
+  type: 'passTurn';
+  battleId: string;
+  playerId: string;
+  timestamp: number;
+}
+
+export interface SurrenderAction {
+  type: 'surrender';
+  battleId: string;
+  playerId: string;
+  timestamp: number;
+}
+
+export interface ResolveStackAction {
+  type: 'resolveStack';
+  battleId: string;
+  stackItemId: string;
+  timestamp: number;
+}
+
+// ============================================================================
+// Cloud Function Interfaces
+// ============================================================================
+
+export interface CreateBattleRequest {
+  mode: BattleMode;
+  participants: string[]; // character ids
+  settings?: {
+    maxTurns?: number;
+    timeLimitMs?: number;
+    allowSpectators?: boolean;
+  };
+  aiOpponent?: {
+    difficulty: 'Easy' | 'Medium' | 'Hard' | 'Boss';
+    aiId: string;
+  };
+}
+
+export interface CreateBattleResponse {
+  success: boolean;
+  battleId?: string;
+  error?: string;
+}
+
+export interface PlayCardRequest {
+  battleId: string;
+  playerId: string;
+  cardId: string;
+  targets?: string[];
+}
+
+export interface PlayCardResponse {
+  success: boolean;
+  error?: string;
+  battleState?: Battle;
+}
+
+export interface PassTurnRequest {
+  battleId: string;
+  playerId: string;
+}
+
+export interface PassTurnResponse {
+  success: boolean;
+  error?: string;
+  battleState?: Battle;
+}
+
+export interface GetBattleRequest {
+  battleId: string;
+  playerId: string;
+}
+
+export interface GetBattleResponse {
+  success: boolean;
+  battle?: Battle;
+  error?: string;
 }
 
 // ============================================================================
@@ -368,6 +622,10 @@ export type {
   Character,
   ItemInstance,
   CardDef,
+  GameCard,
+  QuestCard,
+  QuestObjective,
+  QuestRewards,
   ClassCard,
   BossCard,
   EffectDef,
@@ -394,6 +652,7 @@ export {
   Alignment,
   DeckType,
   Rarity,
+  GameCardType,
   BattleMode,
   BattleState,
   QuestType,

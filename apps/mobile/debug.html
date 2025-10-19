@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Realm of Valor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a2e;
+            color: white;
+        }
+        .debug-info {
+            background-color: #2a2a3e;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .success {
+            color: #51cf66;
+        }
+        .warning {
+            color: #ffd43b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Realm of Valor - Debug Page</h1>
+    
+    <div class="debug-info">
+        <h2>📊 Server Status</h2>
+        <p id="server-status">Checking server...</p>
+    </div>
+    
+    <div class="debug-info">
+        <h2>🌐 Bundle Loading Test</h2>
+        <p id="bundle-status">Testing bundle loading...</p>
+    </div>
+    
+    <div class="debug-info">
+        <h2>🔧 Console Errors</h2>
+        <p id="console-errors">No errors detected</p>
+    </div>
+
+    <script>
+        // Test server connectivity
+        fetch('http://localhost:8081/')
+            .then(response => {
+                document.getElementById('server-status').innerHTML = 
+                    '<span class="success">✅ Server is running on port 8081</span>';
+            })
+            .catch(error => {
+                document.getElementById('server-status').innerHTML = 
+                    '<span class="error">❌ Server not accessible: ' + error.message + '</span>';
+            });
+
+        // Test bundle loading
+        const testBundle = () => {
+            const script = document.createElement('script');
+            script.src = 'http://localhost:8081/node_modules/.pnpm/expo-router@6.0.9_a9755a4d9056f81928e53880d403f094/node_modules/expo-router/entry.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=app&unstable_transformProfile=hermes-stable';
+            script.onload = () => {
+                document.getElementById('bundle-status').innerHTML = 
+                    '<span class="success">✅ Bundle loaded successfully</span>';
+            };
+            script.onerror = (error) => {
+                document.getElementById('bundle-status').innerHTML = 
+                    '<span class="error">❌ Bundle failed to load: ' + error.message + '</span>';
+            };
+            document.head.appendChild(script);
+        };
+
+        // Wait a bit then test bundle
+        setTimeout(testBundle, 2000);
+
+        // Monitor console errors
+        const originalError = console.error;
+        const errors = [];
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            document.getElementById('console-errors').innerHTML = 
+                '<span class="error">❌ ' + errors.length + ' errors detected</span><br>' +
+                errors.map(err => '<small>' + err + '</small>').join('<br>');
+            originalError.apply(console, args);
+        };
+    </script>
+</body>
+</html>
+
+
+
+
+

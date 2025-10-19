@@ -3,7 +3,15 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { useFirebase } from '@/lib/firebase-context';
 import { useAuth } from './useAuth';
-import type { BattleState, BattleAction } from '@rov/logic';
+import type { 
+  Battle, 
+  BattlePlayerState, 
+  BattleAIState,
+  CreateBattleRequest,
+  PlayCardRequest,
+  PassTurnRequest,
+  GetBattleRequest
+} from '@rov/types';
 import { useEffect } from 'react';
 
 /**
@@ -18,12 +26,17 @@ export function useBattle(battleId: string | null) {
   const { data: battle, isLoading } = useQuery({
     queryKey: ['battle', battleId],
     queryFn: async () => {
-      if (!battleId || !db) return null;
+      if (!battleId || !functions || !user) return null;
 
-      // Initial load will be replaced by real-time listener
-      return null;
+      const getBattleFn = httpsCallable(functions, 'getBattle');
+      const result = await getBattleFn({
+        battleId,
+        playerId: user.uid
+      });
+
+      return result.data.battle as Battle;
     },
-    enabled: !!battleId && !!db
+    enabled: !!battleId && !!functions && !!user
   });
 
   // Real-time battle updates
@@ -37,7 +50,7 @@ export function useBattle(battleId: string | null) {
           const battleData = {
             id: doc.id,
             ...doc.data()
-          } as BattleState;
+          } as Battle;
 
           queryClient.setQueryData(['battle', battleId], battleData);
         }
@@ -50,90 +63,122 @@ export function useBattle(battleId: string | null) {
     return () => unsubscribe();
   }, [battleId, db, queryClient]);
 
-  // Execute battle action
-  const executeBattleActionMutation = useMutation({
-    mutationFn: async (action: BattleAction) => {
-      if (!functions || !battleId) throw new Error('Battle not initialized');
+  // Play card mutation
+  const playCardMutation = useMutation({
+    mutationFn: async ({ cardId, targets }: { cardId: string; targets?: string[] }) => {
+      if (!functions || !battleId || !user) throw new Error('Battle not initialized');
 
-      const executeBattleActionFn = httpsCallable(functions, 'executeBattleAction');
-      const result = await executeBattleActionFn({
+      const playCardFn = httpsCallable(functions, 'playCard');
+      const result = await playCardFn({
         battleId,
-        action
+        playerId: user.uid,
+        cardId,
+        targets
       });
 
       return result.data;
     },
     onError: (error) => {
-      console.error('Battle action error:', error);
+      console.error('Play card error:', error);
+    }
+  });
+
+  // Pass turn mutation
+  const passTurnMutation = useMutation({
+    mutationFn: async () => {
+      if (!functions || !battleId || !user) throw new Error('Battle not initialized');
+
+      const passTurnFn = httpsCallable(functions, 'passTurn');
+      const result = await passTurnFn({
+        battleId,
+        playerId: user.uid
+      });
+
+      return result.data;
+    },
+    onError: (error) => {
+      console.error('Pass turn error:', error);
     }
   });
 
   // Play card from hand
-  const playCard = (cardId: string, targetPlayerId?: string) => {
-    executeBattleActionMutation.mutate({
-      type: 'playCard',
-      playerId: user?.uid || '',
-      cardId,
-      targetPlayerId
-    });
-  };
-
-  // Play instant card from hand
-  const playInstant = (cardId: string, targetPlayerId?: string) => {
-    executeBattleActionMutation.mutate({
-      type: 'playInstant',
-      playerId: user?.uid || '',
-      cardId,
-      targetPlayerId
-    });
-  };
-
-  // Use activated ability
-  const useAbility = (abilityId: string, targetPlayerId?: string) => {
-    executeBattleActionMutation.mutate({
-      type: 'activateSkill',
-      playerId: user?.uid || '',
-      skillId: abilityId,
-      targetPlayerId
-    });
+  const playCard = (cardId: string, targets?: string[]) => {
+    playCardMutation.mutate({ cardId, targets });
   };
 
   // Pass turn
   const passTurn = () => {
-    executeBattleActionMutation.mutate({
-      type: 'passTurn',
-      playerId: user?.uid || ''
-    });
+    passTurnMutation.mutate();
   };
 
-  // Surrender
+  // Surrender (simplified for now)
   const surrender = () => {
-    executeBattleActionMutation.mutate({
-      type: 'surrender',
-      playerId: user?.uid || ''
-    });
+    // TODO: Implement surrender functionality
+    console.log('Surrender not implemented yet');
   };
 
   // Get current player's state
-  const myPlayerState = battle?.players.find(p => p.playerId === user?.uid);
+  const myPlayerState = battle?.playerStates ? 
+    Object.values(battle.playerStates).find(p => p.userId === user?.uid) : 
+    undefined;
 
   // Check if it's my turn
-  const isMyTurn = battle?.currentPlayerId === user?.uid;
+  const isMyTurn = battle?.currentTurn && myPlayerState ? 
+    battle.currentTurn === myPlayerState.characterId : 
+    false;
 
-  // Get opponent state
-  const opponentState = battle?.players.find(p => p.playerId !== user?.uid);
+  // Get opponent state (first non-current player)
+  const opponentState = battle?.playerStates ? 
+    Object.values(battle.playerStates).find(p => p.userId !== user?.uid) : 
+    undefined;
+
+  // Get AI opponent if present
+  const aiOpponent = battle?.aiOpponent;
 
   return {
     battle,
     isLoading,
     myPlayerState,
-    opponentState,
+    opponentState: opponentState || aiOpponent,
     isMyTurn,
     playCard,
-    playInstant,
-    useAbility,
     passTurn,
     surrender,
-    isExecuting: executeBattleActionMutation.isPending
+    isExecuting: playCardMutation.isPending || passTurnMutation.isPending
+  };
+}
+
+/**
+ * Hook for creating battles
+ */
+export function useCreateBattle() {
+  const { functions } = useFirebase();
+  const { user } = useAuth();
+
+  const createBattleMutation = useMutation({
+    mutationFn: async (data: Omit<CreateBattleRequest, 'participants'> & { participants?: string[] }) => {
+      if (!functions || !user) throw new Error('Not authenticated');
+
+      const createBattleFn = httpsCallable(functions, 'createBattle');
+      const result = await createBattleFn({
+        ...data,
+        participants: data.participants || [user.uid]
+      });
+
+      return result.data;
+    },
+    onError: (error) => {
+      console.error('Create battle error:', error);
+    }
+  });
+
+  const createBattle = (data: Omit<CreateBattleRequest, 'participants'> & { participants?: string[] }) => {
+    createBattleMutation.mutate(data);
+  };
+
+  return {
+    createBattle,
+    isCreating: createBattleMutation.isPending,
+    error: createBattleMutation.error
   };
 }

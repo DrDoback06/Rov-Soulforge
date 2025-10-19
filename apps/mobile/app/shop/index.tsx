@@ -10,7 +10,7 @@ import { httpsCallable } from 'firebase/functions';
  * Shop Screen - Purchase card packs
  */
 export default function ShopScreen() {
-  const { character, loading } = useCharacter();
+  const { character, loading, error } = useCharacter();
   const { functions } = useFirebase();
   const [purchasing, setPurchasing] = useState<string | null>(null);
 
@@ -57,6 +57,87 @@ export default function ShopScreen() {
     }
   ];
 
+  const questCards = [
+    {
+      id: 'quest-card-easy',
+      name: 'Easy Quest Card',
+      description: 'Create a simple quest with basic rewards',
+      cost: 500,
+      icon: '📜',
+      rarity: 'Common',
+      questData: {
+        title: 'Easy Quest',
+        description: 'A simple quest for beginners',
+        objectives: [
+          { id: '1', type: 'fitness', description: 'Walk 1000 steps', target: 1000, current: 0, completed: false }
+        ],
+        rewards: { xp: 50, gold: 100 },
+        duration: 24,
+        difficulty: 'Easy'
+      }
+    },
+    {
+      id: 'quest-card-medium',
+      name: 'Medium Quest Card',
+      description: 'Create a moderate quest with better rewards',
+      cost: 1000,
+      icon: '📋',
+      rarity: 'Uncommon',
+      questData: {
+        title: 'Medium Quest',
+        description: 'A moderate challenge for experienced adventurers',
+        objectives: [
+          { id: '1', type: 'fitness', description: 'Run 5km', target: 5000, current: 0, completed: false },
+          { id: '2', type: 'battle', description: 'Defeat 3 enemies', target: 3, current: 0, completed: false }
+        ],
+        rewards: { xp: 150, gold: 300 },
+        duration: 48,
+        difficulty: 'Medium'
+      }
+    },
+    {
+      id: 'quest-card-hard',
+      name: 'Hard Quest Card',
+      description: 'Create a challenging quest with excellent rewards',
+      cost: 2000,
+      icon: '📜',
+      rarity: 'Rare',
+      questData: {
+        title: 'Hard Quest',
+        description: 'A challenging quest for skilled adventurers',
+        objectives: [
+          { id: '1', type: 'fitness', description: 'Complete a 10km run', target: 10000, current: 0, completed: false },
+          { id: '2', type: 'battle', description: 'Defeat 5 enemies', target: 5, current: 0, completed: false },
+          { id: '3', type: 'collect', description: 'Find 3 rare items', target: 3, current: 0, completed: false }
+        ],
+        rewards: { xp: 300, gold: 600, cards: [{ cardId: 'rare-card', rarity: 'Rare' }] },
+        duration: 72,
+        difficulty: 'Hard'
+      }
+    },
+    {
+      id: 'quest-card-epic',
+      name: 'Epic Quest Card',
+      description: 'Create an epic quest with legendary rewards',
+      cost: 5000,
+      icon: '📜',
+      rarity: 'Epic',
+      questData: {
+        title: 'Epic Quest',
+        description: 'An epic quest for legendary adventurers',
+        objectives: [
+          { id: '1', type: 'fitness', description: 'Complete a marathon', target: 42195, current: 0, completed: false },
+          { id: '2', type: 'battle', description: 'Defeat 10 enemies', target: 10, current: 0, completed: false },
+          { id: '3', type: 'collect', description: 'Find 5 legendary items', target: 5, current: 0, completed: false },
+          { id: '4', type: 'defend', description: 'Defend a location for 1 hour', target: 3600, current: 0, completed: false }
+        ],
+        rewards: { xp: 1000, gold: 2000, cards: [{ cardId: 'legendary-card', rarity: 'Legendary' }] },
+        duration: 168,
+        difficulty: 'Epic'
+      }
+    }
+  ];
+
   const handlePurchase = async (packId: string, cost: number) => {
     if (!character || character.gold < cost) {
       return;
@@ -78,12 +159,69 @@ export default function ShopScreen() {
     }
   };
 
+  const handlePurchaseQuestCard = async (questCardId: string, cost: number) => {
+    if (!character || character.gold < cost) {
+      return;
+    }
+
+    setPurchasing(questCardId);
+
+    try {
+      // For now, we'll add the quest card directly to inventory
+      // In a real implementation, this would call a Cloud Function
+      const questCard = questCards.find(qc => qc.id === questCardId);
+      if (questCard) {
+        // Add to inventory (simplified for now)
+        console.log('Quest card purchased:', questCard);
+        alert(`Quest card "${questCard.name}" added to inventory!`);
+      }
+    } catch (error: any) {
+      console.error('Quest card purchase failed:', error);
+      alert(error.message || 'Quest card purchase failed');
+    } finally {
+      setPurchasing(null);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.container}>
         <LinearGradient colors={['#1a1a2e', '#0f0f1e']} style={StyleSheet.absoluteFillObject} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4488ff" />
+          <Text style={styles.loadingText}>Loading shop...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={['#1a1a2e', '#0f0f1e']} style={StyleSheet.absoluteFillObject} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Error Loading Shop</Text>
+          <Text style={styles.errorMessage}>{error.message}</Text>
+          <Pressable style={styles.retryButton} onPress={() => window.location.reload()}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  if (!character) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient colors={['#1a1a2e', '#0f0f1e']} style={StyleSheet.absoluteFillObject} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>No Character Found</Text>
+          <Text style={styles.errorMessage}>
+            You need to create a character before accessing the shop.
+          </Text>
+          <Pressable style={styles.retryButton} onPress={() => router.push('/character/create')}>
+            <Text style={styles.retryButtonText}>Create Character</Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -115,6 +253,22 @@ export default function ShopScreen() {
             canAfford={(character?.gold || 0) >= pack.cost}
             isPurchasing={purchasing === pack.id}
             onPurchase={() => handlePurchase(pack.id, pack.cost)}
+          />
+        ))}
+
+        {/* Quest Cards Section */}
+        <Text style={styles.sectionTitle}>Quest Cards</Text>
+        <Text style={styles.sectionSubtitle}>
+          Purchase quest cards to create custom quests on the map
+        </Text>
+
+        {questCards.map((questCard) => (
+          <QuestCardItem
+            key={questCard.id}
+            questCard={questCard}
+            canAfford={(character?.gold || 0) >= questCard.cost}
+            isPurchasing={purchasing === questCard.id}
+            onPurchase={() => handlePurchaseQuestCard(questCard.id, questCard.cost)}
           />
         ))}
 
@@ -193,6 +347,65 @@ function PackCard({
               </Text>
             </View>
           )}
+        </View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
+function QuestCardItem({
+  questCard,
+  canAfford,
+  isPurchasing,
+  onPurchase
+}: {
+  questCard: any;
+  canAfford: boolean;
+  isPurchasing: boolean;
+  onPurchase: () => void;
+}) {
+  return (
+    <Pressable
+      style={[styles.questCardItem, !canAfford && styles.questCardItemDisabled]}
+      onPress={onPurchase}
+      disabled={!canAfford || isPurchasing}
+    >
+      <LinearGradient
+        colors={canAfford ? ['#2a2a3e', '#1a1a2e'] : ['#1a1a1a', '#0a0a0a']}
+        style={styles.questCardItemGradient}
+      >
+        <View style={styles.questCardHeader}>
+          <Text style={styles.questCardIcon}>{questCard.icon}</Text>
+          <View style={styles.questCardInfo}>
+            <Text style={[styles.questCardName, { color: getRarityColor(questCard.rarity) }]}>
+              {questCard.name}
+            </Text>
+            <Text style={styles.questCardDescription}>{questCard.description}</Text>
+            <Text style={styles.questCardDifficulty}>
+              Difficulty: {questCard.questData.difficulty}
+            </Text>
+          </View>
+          <View style={styles.questCardCost}>
+            <Text style={styles.questCardCostText}>💰 {questCard.cost}</Text>
+          </View>
+        </View>
+
+        <View style={styles.questCardDetails}>
+          <Text style={styles.questCardDetailText}>
+            Duration: {questCard.questData.duration}h
+          </Text>
+          <Text style={styles.questCardDetailText}>
+            Rewards: {questCard.questData.rewards.xp} XP, {questCard.questData.rewards.gold} Gold
+          </Text>
+          <Text style={styles.questCardDetailText}>
+            Objectives: {questCard.questData.objectives.length}
+          </Text>
+        </View>
+
+        <View style={styles.questCardFooter}>
+          <Text style={styles.questCardFooterText}>
+            {isPurchasing ? 'Purchasing...' : canAfford ? 'Tap to Purchase' : 'Not Enough Gold'}
+          </Text>
         </View>
       </LinearGradient>
     </Pressable>
@@ -392,5 +605,121 @@ const styles = StyleSheet.create({
   infoSubtext: {
     fontSize: 12,
     color: '#8e8e93'
+  },
+  
+  // Loading and Error States
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#ffffff',
+    textAlign: 'center'
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    gap: 16
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ff4444',
+    textAlign: 'center'
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#ffffff',
+    textAlign: 'center',
+    lineHeight: 24
+  },
+  retryButton: {
+    backgroundColor: '#4488ff',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 8
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff'
+  },
+  
+  // Quest Card Styles
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#8e8e93',
+    marginBottom: 16,
+    textAlign: 'center'
+  },
+  questCardItem: {
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#3a3a4e'
+  },
+  questCardItemDisabled: {
+    opacity: 0.5
+  },
+  questCardItemGradient: {
+    padding: 16,
+    borderRadius: 12
+  },
+  questCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12
+  },
+  questCardIcon: {
+    fontSize: 32,
+    marginRight: 12
+  },
+  questCardInfo: {
+    flex: 1
+  },
+  questCardName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4
+  },
+  questCardDescription: {
+    fontSize: 14,
+    color: '#8e8e93',
+    marginBottom: 4
+  },
+  questCardDifficulty: {
+    fontSize: 12,
+    color: '#4488ff',
+    fontWeight: '600'
+  },
+  questCardCost: {
+    alignItems: 'flex-end'
+  },
+  questCardCostText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffd700'
+  },
+  questCardDetails: {
+    marginBottom: 12
+  },
+  questCardDetailText: {
+    fontSize: 12,
+    color: '#8e8e93',
+    marginBottom: 2
+  },
+  questCardFooter: {
+    alignItems: 'center'
+  },
+  questCardFooterText: {
+    fontSize: 12,
+    color: '#8e8e93',
+    fontStyle: 'italic'
   }
 });
