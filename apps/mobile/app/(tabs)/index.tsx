@@ -31,6 +31,10 @@ import { generateStaticQuests, generateLocalQuests, generateDynamicQuests } from
 // import { loadViewportQuests } from '@/services/viewportQuestLoader';
 import { useSharedValue, withSpring } from 'react-native-reanimated';
 import { Dimensions } from 'react-native';
+import { PatrollingEnemyService } from '@/services/patrollingEnemyService';
+import { DynamicZoneService } from '@/services/dynamicZoneService';
+import { TrailQuestService } from '@/services/trailQuestService';
+import { UK_TRAILS } from '@/data/ukTrails';
 
 interface QuestProgress {
   id: string;
@@ -79,6 +83,11 @@ export default function MapScreen() {
   
   // Spawned enemies
   const [spawnedEnemies, setSpawnedEnemies] = useState<any[]>([]);
+  
+  // NEW: Patrolling enemies and dynamic zones
+  const [patrollingEnemies, setPatrollingEnemies] = useState<any[]>([]);
+  const [dynamicZones, setDynamicZones] = useState<any[]>([]);
+  const [trailMarkers, setTrailMarkers] = useState<any[]>([]);
   
   // UI state
   const [selectedQuest, setSelectedQuest] = useState<EnhancedQuest | null>(null);
@@ -417,6 +426,112 @@ export default function MapScreen() {
       console.error('Error loading quest progress:', error);
     }
   }, [user, db]);
+
+  // Initialize patrolling enemies and dynamic zones
+  useEffect(() => {
+    if (!location) return;
+
+    const playerLoc = {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude
+    };
+
+    // Initialize services
+    PatrollingEnemyService.initialize(playerLoc);
+    DynamicZoneService.initialize(playerLoc);
+
+    // Update state every 3 seconds
+    const interval = setInterval(() => {
+      const enemies = PatrollingEnemyService.getAllEnemies();
+      setPatrollingEnemies(enemies);
+
+      const zones = DynamicZoneService.getAllZones();
+      setDynamicZones(zones);
+    }, 3000);
+
+    // Initial load
+    setPatrollingEnemies(PatrollingEnemyService.getAllEnemies());
+    setDynamicZones(DynamicZoneService.getAllZones());
+
+    return () => {
+      clearInterval(interval);
+      PatrollingEnemyService.shutdown();
+      DynamicZoneService.shutdown();
+    };
+  }, [location]);
+
+  // Load trail markers
+  useEffect(() => {
+    if (!location) return;
+
+    const playerLoc = {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude
+    };
+
+    // Get trails near player (within 50km)
+    const nearbyTrails = UK_TRAILS.filter(trail => {
+      const distance = calculateDistance(
+        playerLoc.latitude,
+        playerLoc.longitude,
+        trail.startLocation.latitude,
+        trail.startLocation.longitude
+      );
+      return distance <= 50; // 50km radius
+    });
+
+    const markers = nearbyTrails.map(trail => ({
+      id: trail.id,
+      name: trail.name,
+      latitude: trail.startLocation.latitude,
+      longitude: trail.startLocation.longitude,
+      difficulty: trail.difficulty,
+      type: trail.type,
+      icon: getTrailIcon(trail),
+      distance: trail.distance,
+      elevationGain: trail.elevationGain
+    }));
+
+    setTrailMarkers(markers);
+
+    // Also load trail quests into static quests
+    const trailQuests = TrailQuestService.getTrailQuestsNear(playerLoc, 50);
+    setStaticQuests(prev => {
+      // Merge with existing, avoiding duplicates
+      const existingIds = new Set(prev.map(q => q.id));
+      const newQuests = trailQuests.filter(q => !existingIds.has(q.id));
+      return [...prev, ...newQuests];
+    });
+  }, [location]);
+
+  // Helper function for trail icons
+  const getTrailIcon = (trail: any) => {
+    if (trail.tags.includes('mountain') || trail.tags.includes('summit')) return '🏔️';
+    if (trail.tags.includes('waterfall')) return '💧';
+    if (trail.tags.includes('lake') || trail.tags.includes('loch')) return '🏞️';
+    if (trail.tags.includes('coastal') || trail.tags.includes('beach')) return '🌊';
+    if (trail.tags.includes('forest') || trail.tags.includes('woodland')) return '🌲';
+    if (trail.type === 'Running') return '🏃';
+    if (trail.type === 'Cycling') return '🚴';
+    return '🥾';
+  };
+
+  // Helper function for distance calculation
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const toRad = (degrees: number) => degrees * (Math.PI / 180);
 
   useEffect(() => {
     if (user && db) {
@@ -828,9 +943,27 @@ export default function MapScreen() {
           focusQuest={showQuestOnMap}
           navigatingToQuest={navigatingToQuest}
           activeQuests={activeQuestsData}
-          spawnedEnemies={spawnedEnemies}
+          spawnedEnemies={[...spawnedEnemies, ...patrollingEnemies]}
         onEnemyPress={handleEnemyTap}
         driveMode={driveMode}
+        dynamicZones={dynamicZones}
+        onZonePress={(zone) => {
+          Alert.alert(
+            `${zone.icon} ${zone.name}`,
+            `${zone.description}\n\nEffect: ${zone.multiplier}x multiplier`,
+            [{ text: 'OK' }]
+          );
+        }}
+        trailMarkers={trailMarkers}
+        onTrailPress={(trail) => {
+          // Find the full trail data
+          const fullTrail = UK_TRAILS.find(t => t.id === trail.id);
+          if (fullTrail) {
+            const quest = TrailQuestService.generateQuestFromTrail(fullTrail);
+            setSelectedQuest(quest);
+            setShowDetailModal(true);
+          }
+        }}
       />
 
       {/* Quest Objective HUD */}

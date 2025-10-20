@@ -12,6 +12,36 @@ interface SpawnedEnemy {
   defeated: boolean;
   level: number;
   icon: string;
+  color?: string;
+  rarity?: string;
+}
+
+interface DynamicZone {
+  id: string;
+  name: string;
+  description: string;
+  center: {
+    latitude: number;
+    longitude: number;
+  };
+  radius: number;
+  color: string;
+  opacity: number;
+  icon: string;
+  effect: string;
+  multiplier: number;
+}
+
+interface TrailMarker {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  difficulty: 'Easy' | 'Moderate' | 'Hard' | 'Expert';
+  type: string;
+  icon: string;
+  distance: number;
+  elevationGain: number;
 }
 
 interface MapViewProps {
@@ -28,9 +58,31 @@ interface MapViewProps {
   spawnedEnemies?: SpawnedEnemy[];
   onEnemyPress?: (enemy: SpawnedEnemy) => void;
   driveMode?: boolean;
+  dynamicZones?: DynamicZone[];
+  onZonePress?: (zone: DynamicZone) => void;
+  trailMarkers?: TrailMarker[];
+  onTrailPress?: (trail: TrailMarker) => void;
 }
 
-export function MapView({ location, quests, onQuestPress, staticQuests = [], onStaticQuestPress, onMapMove, focusQuest, navigatingToQuest, activeQuests = [], onRouteData, spawnedEnemies = [], onEnemyPress, driveMode = false }: MapViewProps) {
+export function MapView({ 
+  location, 
+  quests, 
+  onQuestPress, 
+  staticQuests = [], 
+  onStaticQuestPress, 
+  onMapMove, 
+  focusQuest, 
+  navigatingToQuest, 
+  activeQuests = [], 
+  onRouteData, 
+  spawnedEnemies = [], 
+  onEnemyPress, 
+  driveMode = false,
+  dynamicZones = [],
+  onZonePress,
+  trailMarkers = [],
+  onTrailPress
+}: MapViewProps) {
   const mapRef = useRef<any>(null);
   const [viewState, setViewState] = useState({
     longitude: location.longitude,
@@ -459,9 +511,167 @@ export function MapView({ location, quests, onQuestPress, staticQuests = [], onS
         )
       ))}
 
+      {/* Dynamic Zones - render as circles BEHIND everything */}
+      {dynamicZones.map((zone) => (
+        <Source
+          key={`zone-${zone.id}`}
+          type="geojson"
+          data={{
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [zone.center.longitude, zone.center.latitude]
+            },
+            properties: {}
+          }}
+        >
+          <Layer
+            id={`zone-circle-${zone.id}`}
+            type="circle"
+            paint={{
+              'circle-radius': {
+                stops: [
+                  [10, zone.radius / 10],
+                  [15, zone.radius / 2],
+                  [20, zone.radius]
+                ],
+                base: 2
+              },
+              'circle-color': zone.color,
+              'circle-opacity': zone.opacity,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': zone.color,
+              'circle-stroke-opacity': 0.8
+            }}
+          />
+        </Source>
+      ))}
+
+      {/* Zone labels */}
+      {dynamicZones.map((zone) => (
+        <Marker
+          key={`zone-label-${zone.id}`}
+          longitude={zone.center.longitude}
+          latitude={zone.center.latitude}
+          anchor="center"
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            onZonePress?.(zone);
+          }}
+        >
+          <div
+            style={{
+              cursor: 'pointer',
+              backgroundColor: zone.color,
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: 12,
+              fontSize: 12,
+              fontWeight: 'bold',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              border: '2px solid white',
+              whiteSpace: 'nowrap'
+            }}
+            title={zone.description}
+          >
+            {zone.icon} {zone.name}
+          </div>
+        </Marker>
+      ))}
+
+      {/* Trail markers - color-coded by difficulty */}
+      {trailMarkers.map((trail) => {
+        const difficultyColors = {
+          Easy: '#4caf50',
+          Moderate: '#2196f3',
+          Hard: '#ff9800',
+          Expert: '#f44336'
+        };
+        
+        return (
+          <Marker
+            key={`trail-${trail.id}`}
+            longitude={trail.longitude}
+            latitude={trail.latitude}
+            anchor="center"
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              onTrailPress?.(trail);
+            }}
+          >
+            <div
+              style={{
+                cursor: 'pointer',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title={`${trail.name} - ${trail.difficulty} (${(trail.distance / 1000).toFixed(1)}km, ${trail.elevationGain}m↑)`}
+            >
+              {/* Difficulty ring */}
+              <div
+                style={{
+                  position: 'absolute',
+                  width: 50,
+                  height: 50,
+                  borderRadius: '50%',
+                  border: `3px solid ${difficultyColors[trail.difficulty]}`,
+                  opacity: 0.6
+                }}
+              />
+
+              {/* Trail icon */}
+              <div
+                style={{
+                  fontSize: 32,
+                  filter: `drop-shadow(0 2px 6px ${difficultyColors[trail.difficulty]})`,
+                  position: 'relative',
+                  zIndex: 1
+                }}
+              >
+                {trail.icon}
+              </div>
+
+              {/* Difficulty badge */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: -12,
+                  backgroundColor: difficultyColors[trail.difficulty],
+                  color: 'white',
+                  fontSize: 9,
+                  fontWeight: 'bold',
+                  padding: '2px 6px',
+                  borderRadius: 8,
+                  border: '1px solid white',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+                  zIndex: 2
+                }}
+              >
+                {trail.difficulty}
+              </div>
+            </div>
+          </Marker>
+        );
+      })}
+
       {/* Enemy markers */}
-      {spawnedEnemies.map((enemy) => (
-        !enemy.defeated && (
+      {spawnedEnemies.map((enemy) => {
+        const rarityColors = {
+          Boss: '#ff0000',
+          Elite: '#ffd700',
+          Merchant: '#9933ff',
+          Common: '#666666'
+        };
+        
+        const glowColor = enemy.color || rarityColors[enemy.rarity as keyof typeof rarityColors] || '#ff4444';
+        const isElite = enemy.rarity === 'Elite';
+        const isBoss = enemy.rarity === 'Boss';
+        const isMerchant = enemy.rarity === 'Merchant';
+        
+        return !enemy.defeated && (
           <Marker
             key={enemy.id}
             longitude={enemy.longitude}
@@ -483,24 +693,24 @@ export function MapView({ location, quests, onQuestPress, staticQuests = [], onS
               }}
               title={`${enemy.name} (Lv ${enemy.level})`}
             >
-              {/* Pulsing red glow for enemies */}
+              {/* Pulsing glow for enemies */}
               <div
                 style={{
                   position: 'absolute',
-                  width: 40,
-                  height: 40,
+                  width: isBoss ? 60 : isElite ? 50 : 40,
+                  height: isBoss ? 60 : isElite ? 50 : 40,
                   borderRadius: '50%',
-                  backgroundColor: '#ff4444',
+                  backgroundColor: glowColor,
                   opacity: 0.3,
-                  animation: 'pulse 1.5s ease-in-out infinite'
+                  animation: `pulse ${isBoss ? '1s' : isElite ? '1.2s' : '1.5s'} ease-in-out infinite`
                 }}
               />
 
               {/* Enemy icon */}
               <div
                 style={{
-                  fontSize: 28,
-                  filter: 'drop-shadow(0 2px 6px #ff0000)',
+                  fontSize: isBoss ? 36 : isElite ? 32 : 28,
+                  filter: `drop-shadow(0 2px 6px ${glowColor})`,
                   position: 'relative',
                   zIndex: 1
                 }}
@@ -508,12 +718,57 @@ export function MapView({ location, quests, onQuestPress, staticQuests = [], onS
                 {enemy.icon}
               </div>
 
+              {/* Elite star */}
+              {isElite && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    fontSize: 16,
+                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                  }}
+                >
+                  ⭐
+                </div>
+              )}
+
+              {/* Boss skull */}
+              {isBoss && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    fontSize: 20,
+                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                  }}
+                >
+                  💀
+                </div>
+              )}
+
+              {/* Merchant indicator */}
+              {isMerchant && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    fontSize: 16,
+                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                  }}
+                >
+                  💰
+                </div>
+              )}
+
               {/* Level badge */}
               <div
                 style={{
                   position: 'absolute',
                   bottom: -8,
-                  backgroundColor: '#ff4444',
+                  backgroundColor: glowColor,
                   color: 'white',
                   fontSize: 10,
                   fontWeight: 'bold',
@@ -528,8 +783,8 @@ export function MapView({ location, quests, onQuestPress, staticQuests = [], onS
               </div>
             </div>
           </Marker>
-        )
-      ))}
+        );
+      })}
     </Map>
   );
 }
