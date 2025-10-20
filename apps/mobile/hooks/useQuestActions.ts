@@ -8,10 +8,12 @@ import {
   updateDoc, 
   doc,
   increment,
-  serverTimestamp 
+  serverTimestamp,
+  getDoc 
 } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import type { EnhancedQuest } from '@/types/quest-enhanced';
+import { applyXP, calculateStatIncreases, getQuestXPReward, getQuestGoldReward, getQuestRenownReward } from '@/utils/characterProgression';
 
 /**
  * Quest Actions Hook
@@ -124,7 +126,8 @@ export function useQuestActions(db: Firestore | null, userId: string | undefined
   /**
    * Complete a quest
    * Grants rewards (gold, XP, renown)
-   * Adds items to stash
+   * Handles level-ups with stat increases
+   * Adds items to inventory
    * Updates quest status to completed
    */
   const completeQuest = useCallback(async (quest: EnhancedQuest) => {
@@ -154,65 +157,115 @@ export function useQuestActions(db: Firestore | null, userId: string | undefined
         return { success: false, error: 'All objectives must be completed first' };
       }
 
+      // Get user's character
+      const characterRef = doc(db, 'characters', userId);
+      const characterSnap = await getDoc(characterRef);
+
+      if (!characterSnap.exists()) {
+        return { success: false, error: 'Character not found' };
+      }
+
+      const characterData = characterSnap.data();
+      const currentLevel = characterData.level || 1;
+      const currentXP = characterData.counters?.xp || 0;
+      const classId = characterData.classId || 'Warrior';
+
+      // Calculate rewards based on quest rarity
+      const xpReward = quest.rewards?.xp || getQuestXPReward(quest.rarity);
+      const goldReward = quest.rewards?.gold || getQuestGoldReward(quest.rarity);
+      const renownReward = quest.rewards?.renown || getQuestRenownReward(quest.rarity);
+
+      // Apply XP and check for level-ups
+      const progressionResult = applyXP(currentLevel, currentXP, xpReward);
+      
+      // Prepare character updates
+      const updates: any = {
+        'counters.xp': progressionResult.newXP,
+        gold: increment(goldReward),
+        'counters.renown': increment(renownReward)
+      };
+
+      // Handle level-ups
+      let levelUpMessages: string[] = [];
+      if (progressionResult.levelUps.length > 0) {
+        const finalLevel = progressionResult.levelUps[progressionResult.levelUps.length - 1].newLevel;
+        updates.level = finalLevel;
+
+        // Calculate total stat increases
+        const statIncreases = calculateStatIncreases(classId, progressionResult.levelUps);
+
+        // Apply stat increases
+        if (statIncreases.atk > 0) {
+          updates['stats.atk'] = increment(statIncreases.atk);
+        }
+        if (statIncreases.def > 0) {
+          updates['stats.def'] = increment(statIncreases.def);
+        }
+        if (statIncreases.spd > 0) {
+          updates['stats.spd'] = increment(statIncreases.spd);
+        }
+        updates['stats.maxHp'] = increment(statIncreases.maxHp);
+        updates['stats.maxMana'] = increment(statIncreases.maxMana);
+        
+        // Heal to full on level up
+        updates['counters.hp'] = characterData.stats.maxHp + statIncreases.maxHp;
+        updates['counters.mana'] = characterData.stats.maxMana + statIncreases.maxMana;
+
+        levelUpMessages = progressionResult.levelUps.map(lu => 
+          `Level ${lu.oldLevel} → ${lu.newLevel}!`
+        );
+      }
+
       // Update quest status
       await updateDoc(doc(db, 'questProgress', progressDoc.id), {
         status: 'completed',
         completedAt: new Date().toISOString()
       });
 
-      // Get user's character
-      const characterQuery = query(
-        collection(db, 'characters'),
-        where('uid', '==', userId)
-      );
-      const characterSnapshot = await getDocs(characterQuery);
+      // Update character
+      await updateDoc(characterRef, updates);
 
-      if (characterSnapshot.empty) {
-        return { success: false, error: 'Character not found' };
-      }
-
-      const characterDoc = characterSnapshot.docs[0];
-
-      // Grant rewards
-      const updates: any = {};
-
-      if (quest.rewards.gold) {
-        updates.gold = increment(quest.rewards.gold);
-      }
-
-      if (quest.rewards.xp) {
-        updates.xp = increment(quest.rewards.xp);
-      }
-
-      if (quest.rewards.renown) {
-        updates.renown = increment(quest.rewards.renown);
-      }
-
-      if (Object.keys(updates).length > 0) {
-        await updateDoc(doc(db, 'characters', characterDoc.id), updates);
-      }
-
-      // Add items to stash
-      if (quest.rewards.items && quest.rewards.items.length > 0) {
-        for (const item of quest.rewards.items) {
-          await addDoc(collection(db, 'stashItems'), {
-            userId,
-            ...item,
-            source: 'quest_reward',
-            questId: quest.id,
-            createdAt: serverTimestamp()
+      // Add card rewards to inventory
+      if (quest.rewards?.cards && quest.rewards.cards.length > 0) {
+        const inventoryRef = doc(db, 'inventories', userId);
+        const inventorySnap = await getDoc(inventoryRef);
+        
+        if (inventorySnap.exists()) {
+          const inventoryData = inventorySnap.data();
+          const cards = inventoryData.cards || {};
+          
+          // Add each reward card
+          quest.rewards.cards.forEach((card: any) => {
+            const cardId = card.cardId || `reward_${Date.now()}_${Math.random()}`;
+            if (cards[cardId]) {
+              // Increment count if already exists
+              cards[cardId].count = (cards[cardId].count || 1) + 1;
+            } else {
+              // Add new card
+              cards[cardId] = {
+                ...card,
+                count: 1,
+                location: 'inventory'
+              };
+            }
           });
+
+          await updateDoc(inventoryRef, { cards });
         }
       }
 
       return { 
         success: true, 
         rewards: {
-          gold: quest.rewards.gold || 0,
-          xp: quest.rewards.xp || 0,
-          renown: quest.rewards.renown || 0,
-          items: quest.rewards.items || []
-        }
+          gold: goldReward,
+          xp: xpReward,
+          renown: renownReward,
+          cards: quest.rewards?.cards || []
+        },
+        levelUps: progressionResult.levelUps.map((lu, idx) => ({
+          ...lu,
+          message: levelUpMessages[idx]
+        }))
       };
     } catch (error) {
       console.error('Error completing quest:', error);

@@ -1,400 +1,263 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-  withTiming,
-  interpolate,
-  Easing
-} from 'react-native-reanimated';
-import * as Haptics from '@/lib/haptics';
-import type { DiceRoll } from '@rov/types';
-
-/**
- * Dice Roller Component
- *
- * Features:
- * - Visual dice rolling animation
- * - Support for d4, d6, d8, d10, d12, d20
- * - Physics-based animation metadata for future 3D implementation
- * - Roll history
- * - Haptic feedback
- */
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState, useRef, useEffect } from 'react';
 
 interface DiceRollerProps {
   visible: boolean;
-  sides: number;
-  onRoll?: (result: DiceRoll) => void;
-  onClose?: () => void;
-  context?: string;
+  onRoll: (result: number) => void;
+  onClose: () => void;
+  sides?: number; // D6, D20, etc.
+  reason?: string; // What the roll is for
+  seed?: string; // For verifiable RNG
 }
 
-export function DiceRoller({
-  visible,
-  sides,
-  onRoll,
-  onClose,
-  context
+/**
+ * Dice Roller Component
+ * 
+ * Features:
+ * - 3D tactile dice animation
+ * - Seeded RNG for auditing
+ * - Visual feedback with haptics
+ * - Shows roll reason and result
+ */
+export function DiceRoller({ 
+  visible, 
+  onRoll, 
+  onClose, 
+  sides = 6, 
+  reason = 'Random event',
+  seed 
 }: DiceRollerProps) {
-  const [result, setResult] = useState<number | null>(null);
   const [isRolling, setIsRolling] = useState(false);
-  const [history, setHistory] = useState<DiceRoll[]>([]);
+  const [result, setResult] = useState<number | null>(null);
+  
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  // Animation values
-  const rotation = useSharedValue(0);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
+  useEffect(() => {
+    if (visible) {
+      setResult(null);
+      rotateAnim.setValue(0);
+      scaleAnim.setValue(1);
+    }
+  }, [visible]);
 
-  const handleRoll = async () => {
+  const handleRoll = () => {
     if (isRolling) return;
 
     setIsRolling(true);
     setResult(null);
 
-    // Haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    // Animate dice roll
-    rotation.value = 0;
-    scale.value = 1;
-
-    rotation.value = withSequence(
-      withTiming(720, { duration: 1000, easing: Easing.out(Easing.cubic) }),
-      withTiming(0, { duration: 0 })
-    );
-
-    scale.value = withSequence(
-      withSpring(1.2, { damping: 10 }),
-      withSpring(1)
-    );
-
-    // Simulate roll with delay
-    setTimeout(() => {
-      const rollResult = Math.floor(Math.random() * sides) + 1;
-
-      const roll: DiceRoll = {
-        id: `roll_${Date.now()}`,
-        seed: `seed_${Date.now()}`,
-        sides,
-        result: rollResult,
-        timestamp: Date.now(),
-        context
-      };
-
+    // Animate dice rolling
+    Animated.parallel([
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true
+        }),
+        { iterations: 10 }
+      ),
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.3,
+          duration: 500,
+          useNativeDriver: true
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true
+        })
+      ])
+    ]).start(() => {
+      // Generate roll result (seeded if provided)
+      const rollResult = generateRoll(sides, seed);
       setResult(rollResult);
-      setHistory([roll, ...history.slice(0, 9)]); // Keep last 10 rolls
       setIsRolling(false);
 
-      // Success haptic
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Trigger haptic feedback
+      // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-      if (onRoll) {
-        onRoll(roll);
-      }
-    }, 1000);
+      // Auto-close after showing result
+      setTimeout(() => {
+        onRoll(rollResult);
+      }, 1500);
+    });
   };
 
-  const diceStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { rotate: `${rotation.value}deg` },
-        { scale: scale.value }
-      ],
-      opacity: opacity.value
-    };
+  if (!visible) return null;
+
+  const rotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
   });
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Roll d{sides}</Text>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </Pressable>
-          </View>
+    <View style={styles.overlay}>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#2a1a4e', '#1a1a2e']}
+          style={styles.content}
+        >
+          {/* Title */}
+          <Text style={styles.title}>{reason}</Text>
 
           {/* Dice Display */}
-          <View style={styles.diceContainer}>
-            <Animated.View style={[styles.dice, diceStyle]}>
-              {result !== null ? (
-                <DiceFace sides={sides} value={result} />
-              ) : (
-                <DiceFace sides={sides} value={sides === 6 ? 6 : 1} />
-              )}
-            </Animated.View>
-
-            {/* Result Display */}
-            {result !== null && (
-              <View style={styles.resultContainer}>
-                <Text style={styles.resultLabel}>Result</Text>
-                <Text style={styles.resultValue}>{result}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Roll Button */}
-          <Pressable
-            style={[styles.rollButton, isRolling && styles.rollButtonDisabled]}
-            onPress={handleRoll}
-            disabled={isRolling}
+          <Animated.View
+            style={[
+              styles.diceContainer,
+              {
+                transform: [
+                  { rotate: rotation },
+                  { scale: scaleAnim }
+                ]
+              }
+            ]}
           >
-            <Text style={styles.rollButtonText}>
-              {isRolling ? 'Rolling...' : 'Roll Dice'}
-            </Text>
-          </Pressable>
+            <LinearGradient
+              colors={['#4488ff', '#2244cc']}
+              style={styles.dice}
+            >
+              {result !== null ? (
+                <Text style={styles.diceResult}>{result}</Text>
+              ) : (
+                <Text style={styles.diceSides}>D{sides}</Text>
+              )}
+            </LinearGradient>
+          </Animated.View>
 
-          {/* Roll History */}
-          {history.length > 0 && (
-            <View style={styles.historyContainer}>
-              <Text style={styles.historyTitle}>Recent Rolls</Text>
-              <View style={styles.historyList}>
-                {history.slice(0, 5).map((roll) => (
-                  <View key={roll.id} style={styles.historyItem}>
-                    <Text style={styles.historyDice}>d{roll.sides}</Text>
-                    <Text style={styles.historyResult}>{roll.result}</Text>
-                  </View>
-                ))}
-              </View>
+          {/* Result Display */}
+          {result !== null && (
+            <View style={styles.resultContainer}>
+              <Text style={styles.resultLabel}>Result:</Text>
+              <Text style={styles.resultValue}>{result}</Text>
+              {seed && (
+                <Text style={styles.seedText}>Seed: {seed.substring(0, 8)}...</Text>
+              )}
             </View>
           )}
 
-          {/* Context Info */}
-          {context && (
-            <Text style={styles.contextText}>
-              {context}
-            </Text>
+          {/* Roll Button */}
+          {result === null && (
+            <Pressable
+              style={[styles.rollButton, isRolling && styles.rollButtonDisabled]}
+              onPress={handleRoll}
+              disabled={isRolling}
+            >
+              <LinearGradient
+                colors={isRolling ? ['#2a2a3e', '#1a1a2e'] : ['#4488ff', '#2266dd']}
+                style={styles.rollButtonGradient}
+              >
+                <Text style={styles.rollButtonText}>
+                  {isRolling ? 'Rolling...' : '🎲 Roll Dice'}
+                </Text>
+              </LinearGradient>
+            </Pressable>
           )}
-        </View>
+
+          {/* Close Button */}
+          {result !== null && (
+            <Pressable style={styles.closeButton} onPress={onClose}>
+              <Text style={styles.closeButtonText}>Continue</Text>
+            </Pressable>
+          )}
+        </LinearGradient>
       </View>
-    </Modal>
+    </View>
   );
 }
 
 /**
- * Dice face visualization
- * Displays appropriate face based on dice type
+ * Generate roll result with optional seeded RNG
  */
-function DiceFace({ sides, value }: { sides: number; value: number }) {
-  // For d6, show dots
-  if (sides === 6) {
-    return <D6Face value={value} />;
+function generateRoll(sides: number, seed?: string): number {
+  if (seed) {
+    // Seeded RNG for verifiable randomness
+    const hash = hashString(seed);
+    return (hash % sides) + 1;
   }
-
-  // For other dice, show number
-  return (
-    <View style={styles.diceFace}>
-      <Text style={styles.diceFaceNumber}>{value}</Text>
-      <Text style={styles.diceFaceLabel}>d{sides}</Text>
-    </View>
-  );
+  
+  // Standard random
+  return Math.floor(Math.random() * sides) + 1;
 }
 
 /**
- * D6 face with dots
+ * Simple string hash for seeded RNG
  */
-function D6Face({ value }: { value: number }) {
-  const dots = getDotPattern(value);
-
-  return (
-    <View style={styles.d6Face}>
-      <View style={styles.dotGrid}>
-        {dots.map((row, rowIdx) => (
-          <View key={rowIdx} style={styles.dotRow}>
-            {row.map((hasDot, colIdx) => (
-              <View
-                key={colIdx}
-                style={[styles.dotSpace, hasDot && styles.dot]}
-              />
-            ))}
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/**
- * Get dot pattern for d6 face
- */
-function getDotPattern(value: number): boolean[][] {
-  const patterns: Record<number, boolean[][]> = {
-    1: [
-      [false, false, false],
-      [false, true, false],
-      [false, false, false]
-    ],
-    2: [
-      [true, false, false],
-      [false, false, false],
-      [false, false, true]
-    ],
-    3: [
-      [true, false, false],
-      [false, true, false],
-      [false, false, true]
-    ],
-    4: [
-      [true, false, true],
-      [false, false, false],
-      [true, false, true]
-    ],
-    5: [
-      [true, false, true],
-      [false, true, false],
-      [true, false, true]
-    ],
-    6: [
-      [true, false, true],
-      [true, false, true],
-      [true, false, true]
-    ]
-  };
-
-  return patterns[value] || patterns[1];
-}
-
-/**
- * Hook to use dice roller
- */
-export function useDiceRoller() {
-  const [visible, setVisible] = useState(false);
-  const [config, setConfig] = useState({ sides: 6, context: '' });
-
-  const roll = (sides: number, context?: string) => {
-    setConfig({ sides, context: context || '' });
-    setVisible(true);
-  };
-
-  const close = () => {
-    setVisible(false);
-  };
-
-  return {
-    visible,
-    sides: config.sides,
-    context: config.context,
-    roll,
-    close
-  };
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    zIndex: 1000
   },
   container: {
-    width: '90%',
-    maxWidth: 400,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 2,
-    borderColor: '#4a4a5e'
+    width: '85%',
+    maxWidth: 350
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff'
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
+  content: {
     borderRadius: 16,
-    backgroundColor: '#2a2a3e',
-    justifyContent: 'center',
+    padding: 32,
+    borderWidth: 2,
+    borderColor: '#4488ff',
     alignItems: 'center'
   },
-  closeButtonText: {
+  title: {
     fontSize: 20,
-    color: '#ffffff'
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 24,
+    textAlign: 'center'
   },
   diceContainer: {
-    alignItems: 'center',
     marginBottom: 24
   },
   dice: {
-    width: 160,
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  diceFace: {
-    width: 160,
-    height: 160,
-    backgroundColor: '#2a2a3e',
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: '#4488ff',
+    width: 120,
+    height: 120,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#4488ff',
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5,
-    shadowRadius: 12
+    shadowRadius: 8
   },
-  diceFaceNumber: {
-    fontSize: 72,
+  diceSides: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#ffffff'
   },
-  diceFaceLabel: {
-    fontSize: 16,
-    color: '#8e8e93',
-    marginTop: 8
-  },
-  d6Face: {
-    width: 160,
-    height: 160,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8
-  },
-  dotGrid: {
-    width: '100%',
-    height: '100%'
-  },
-  dotRow: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center'
-  },
-  dotSpace: {
-    width: 24,
-    height: 24
-  },
-  dot: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: 12
+  diceResult: {
+    fontSize: 56,
+    fontWeight: 'bold',
+    color: '#ffd700'
   },
   resultContainer: {
-    marginTop: 24,
-    alignItems: 'center'
+    alignItems: 'center',
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    minWidth: 200
   },
   resultLabel: {
     fontSize: 14,
@@ -404,61 +267,40 @@ const styles = StyleSheet.create({
   resultValue: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#ffd700'
+    color: '#4caf50',
+    marginBottom: 8
+  },
+  seedText: {
+    fontSize: 10,
+    color: '#5e5e6e',
+    fontFamily: 'monospace'
   },
   rollButton: {
-    backgroundColor: '#4488ff',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 16
+    width: '100%'
   },
   rollButtonDisabled: {
-    backgroundColor: '#2a2a3e',
     opacity: 0.5
+  },
+  rollButtonGradient: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center'
   },
   rollButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#ffffff'
   },
-  historyContainer: {
-    marginTop: 8
-  },
-  historyTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8e8e93',
-    marginBottom: 8
-  },
-  historyList: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap'
-  },
-  historyItem: {
-    backgroundColor: '#2a2a3e',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexDirection: 'row',
-    gap: 8,
+  closeButton: {
+    width: '100%',
+    backgroundColor: '#4488ff',
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center'
   },
-  historyDice: {
-    fontSize: 12,
-    color: '#8e8e93'
-  },
-  historyResult: {
-    fontSize: 14,
+  closeButtonText: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#ffffff'
-  },
-  contextText: {
-    fontSize: 12,
-    color: '#5e5e6e',
-    textAlign: 'center',
-    fontStyle: 'italic',
-    marginTop: 12
   }
 });

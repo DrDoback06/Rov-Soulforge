@@ -13,7 +13,12 @@ export const submitActivity = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
   }
 
-  const { source, kind, start, end, distanceM, steps, avgHr, elevGainM, proofs } = data;
+  const { activity } = data;
+  if (!activity) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing activity data');
+  }
+
+  const { source, kind, start, end, distanceM, steps, avgHr, elevGainM, proofs } = activity;
 
   // Validate input
   if (!source || !kind || !start || !end) {
@@ -41,7 +46,7 @@ export const submitActivity = functions.https.onCall(async (data, context) => {
     // Create activity event
     const activityRef = db.collection('activityEvents').doc();
 
-    const activity: ActivityEvent = {
+    const activityEvent: ActivityEvent = {
       id: activityRef.id,
       uid: context.auth.uid,
       source: source as ActivitySource,
@@ -56,16 +61,84 @@ export const submitActivity = functions.https.onCall(async (data, context) => {
     };
 
     await activityRef.set({
-      ...activity,
+      ...activityEvent,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
+    // Calculate user streak
+    const userActivities = await db.collection('activityEvents')
+      .where('uid', '==', context.auth.uid)
+      .orderBy('start', 'desc')
+      .limit(30)
+      .get();
+
+    const activityDates = userActivities.docs.map(doc => doc.data().start);
+    const streak = calculateActivityStreak(activityDates);
+
+    // Get daily activity count
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStart = today.getTime();
+    const todayEnd = todayStart + (24 * 60 * 60 * 1000);
+
+    const todayActivities = await db.collection('activityEvents')
+      .where('uid', '==', context.auth.uid)
+      .where('start', '>=', todayStart)
+      .where('start', '<', todayEnd)
+      .get();
+
+    const dailyCount = todayActivities.size;
+
+    // Calculate fitness rewards
+    const rewards = calculateFitnessRewards(activityEvent, streak, dailyCount);
+
+    // Apply rewards to character
+    const characterRef = db.collection('characters').doc(context.auth.uid);
+    const characterSnap = await characterRef.get();
+
+    if (characterSnap.exists()) {
+      const updates: any = {
+        'counters.xp': admin.firestore.FieldValue.increment(rewards.xp),
+        gold: admin.firestore.FieldValue.increment(rewards.gold)
+      };
+
+      if (rewards.renown > 0) {
+        updates['counters.renown'] = admin.firestore.FieldValue.increment(rewards.renown);
+      }
+
+      await characterRef.update(updates);
+
+      // Store temporary buffs
+      if (rewards.temporaryBuffs && rewards.temporaryBuffs.length > 0) {
+        const buffsRef = db.collection('characters').doc(context.auth.uid).collection('activeBuffs');
+        
+        const buffPromises = rewards.temporaryBuffs.map(buff => 
+          buffsRef.add({
+            ...buff,
+            source: 'fitness_activity',
+            activityId: activityRef.id,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+          })
+        );
+
+        await Promise.all(buffPromises);
+      }
+    }
+
     // Check for quest progress that requires this activity
-    await checkActivityQuests(context.auth.uid, activity);
+    await checkActivityQuests(context.auth.uid, activityEvent);
 
     return {
+      success: true,
       activityId: activityRef.id,
-      validated: true
+      validated: true,
+      rewards: {
+        gold: rewards.gold,
+        xp: rewards.xp,
+        renown: rewards.renown,
+        temporaryBuffs: rewards.temporaryBuffs,
+        streakBonus: rewards.streakBonus
+      }
     };
   } catch (error) {
     console.error('Error submitting activity:', error);
@@ -75,6 +148,117 @@ export const submitActivity = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('internal', 'Failed to submit activity');
   }
 });
+
+/**
+ * Calculate fitness rewards (imported logic)
+ */
+function calculateFitnessRewards(
+  activity: ActivityEvent,
+  userStreak: number = 0,
+  dailyActivityCount: number = 0
+): any {
+  const reward: any = {
+    gold: 0,
+    xp: 0,
+    renown: 0,
+    temporaryBuffs: []
+  };
+
+  // Distance rewards: 1 Gold per 0.5km (max 20/day)
+  if (activity.distanceM) {
+    const distanceKm = activity.distanceM / 1000;
+    const distanceGold = Math.floor(distanceKm / 0.5);
+    const dailyDistanceCap = 20;
+    
+    reward.gold += Math.min(distanceGold, dailyDistanceCap - Math.min(dailyActivityCount * 5, dailyDistanceCap));
+  }
+
+  // Elevation rewards: 1 Gold per 100m (max 10/day)
+  if (activity.elevGainM) {
+    const elevGold = Math.floor(activity.elevGainM / 100);
+    const dailyElevCap = 10;
+    
+    reward.gold += Math.min(elevGold, dailyElevCap);
+  }
+
+  // Activity type XP bonuses
+  const xpByActivityType: any = {
+    'run': 30,
+    'hike': 25,
+    'bike': 20,
+    'walk': 15,
+    'hr-session': 10
+  };
+
+  reward.xp = xpByActivityType[activity.kind] || 10;
+
+  // Duration bonus XP (5 XP per 10 minutes)
+  const durationMinutes = (activity.end - activity.start) / (1000 * 60);
+  reward.xp += Math.floor(durationMinutes / 10) * 5;
+
+  // Streak bonuses
+  if (userStreak >= 30) {
+    reward.streakBonus = { days: userStreak, multiplier: 1.5 };
+    reward.xp = Math.floor(reward.xp * 1.5);
+  } else if (userStreak >= 7) {
+    reward.streakBonus = { days: userStreak, multiplier: 1.2 };
+    reward.xp = Math.floor(reward.xp * 1.2);
+  } else if (userStreak >= 3) {
+    reward.streakBonus = { days: userStreak, multiplier: 1.1 };
+    reward.xp = Math.floor(reward.xp * 1.1);
+  }
+
+  // Heart rate based temporary buffs
+  if (activity.avgHr && activity.avgHr > 0) {
+    const now = Date.now();
+    const estimatedMaxHr = 180;
+    const hrPercent = (activity.avgHr / estimatedMaxHr) * 100;
+
+    // High intensity = Attack buff
+    if (hrPercent >= 70 && durationMinutes >= 2) {
+      const buffDuration = 10 * 60 * 1000; // 10 minutes
+      const buffAmount = Math.min(5, Math.floor(durationMinutes / 10));
+      
+      reward.temporaryBuffs.push({
+        stat: 'atk',
+        amount: buffAmount,
+        durationMs: buffDuration,
+        expiresAt: now + buffDuration
+      });
+    }
+  }
+
+  return reward;
+}
+
+/**
+ * Calculate activity streak
+ */
+function calculateActivityStreak(activityDates: number[]): number {
+  if (activityDates.length === 0) return 0;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTimestamp = today.getTime();
+  
+  let streak = 0;
+  let currentDate = todayTimestamp;
+  
+  for (const activityTimestamp of activityDates) {
+    const activityDate = new Date(activityTimestamp);
+    activityDate.setHours(0, 0, 0, 0);
+    const activityDateTimestamp = activityDate.getTime();
+    
+    if (activityDateTimestamp === currentDate || activityDateTimestamp === currentDate - (1000 * 60 * 60 * 24)) {
+      streak++;
+      currentDate = activityDateTimestamp - (1000 * 60 * 60 * 24);
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+}
 
 /**
  * Validate activity for anti-cheat
