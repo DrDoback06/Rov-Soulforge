@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useEffect } from 'react';
@@ -7,6 +7,7 @@ import { BattleHand } from '@/components/BattleHand';
 import { StackPanel } from '@/components/StackPanel';
 import { DiceRoller } from '@/components/DiceRoller';
 import type { BossRaidPhase } from '@/types/party';
+import { generateRaidLoot, distributeLoot, calculateMVP, type PlayerLoot } from '@/utils/raidLootDistribution';
 
 /**
  * Boss Raid Screen
@@ -35,6 +36,25 @@ export default function BossRaidScreen() {
   const [showDice, setShowDice] = useState(false);
   const [showQuickChat, setShowQuickChat] = useState(false);
   const [showEmotes, setShowEmotes] = useState(false);
+  const [showLootModal, setShowLootModal] = useState(false);
+  const [playerLoot, setPlayerLoot] = useState<PlayerLoot | null>(null);
+
+  // Check for raid completion and distribute loot
+  useEffect(() => {
+    if (battle?.status === 'completed' && !showLootModal && battle.bossState?.hp <= 0) {
+      // Boss defeated! Generate and distribute loot
+      const loot = generateRaidLoot(battle as any);
+      const playerIds = Object.keys(battle.playerStates || {});
+      const distributedLoot = distributeLoot(battle as any, loot, playerIds);
+      
+      // Find this player's loot
+      const myLoot = distributedLoot.find(l => l.userId === myPlayerState?.userId);
+      if (myLoot) {
+        setPlayerLoot(myLoot);
+        setShowLootModal(true);
+      }
+    }
+  }, [battle?.status, battle?.bossState?.hp]);
 
   // Boss state
   const bossHp = battle?.bossState?.hp || 10000;
@@ -139,8 +159,74 @@ export default function BossRaidScreen() {
       {showEmotes && (
         <EmotesModal onClose={() => setShowEmotes(false)} />
       )}
+
+      {/* Loot Distribution Modal */}
+      {showLootModal && playerLoot && (
+        <LootModal 
+          loot={playerLoot} 
+          onClose={() => {
+            setShowLootModal(false);
+            router.back();
+          }} 
+        />
+      )}
     </View>
   );
+}
+
+function LootModal({ loot, onClose }: { loot: PlayerLoot; onClose: () => void }) {
+  return (
+    <View style={styles.lootModalOverlay}>
+      <LinearGradient colors={['#2a1a4e', '#1a1a2e']} style={styles.lootModalContent}>
+        <Text style={styles.lootModalTitle}>
+          {loot.isMVP ? '🏆 MVP REWARDS! 🏆' : '🎁 Raid Complete!'}
+        </Text>
+
+        {/* Rewards Summary */}
+        <View style={styles.lootRewardsBox}>
+          <Text style={styles.lootReward}>💰 {loot.gold} Gold</Text>
+          <Text style={styles.lootReward}>⭐ {loot.xp} XP</Text>
+          <Text style={styles.lootReward}>🎖️ {loot.renown} Renown</Text>
+        </View>
+
+        {/* Items */}
+        {loot.items.length > 0 && (
+          <View style={styles.lootItemsBox}>
+            <Text style={styles.lootItemsTitle}>Items Received:</Text>
+            {loot.items.map((item, i) => (
+              <View key={i} style={styles.lootItem}>
+                <Text style={styles.lootItemIcon}>{item.icon}</Text>
+                <View style={styles.lootItemInfo}>
+                  <Text style={[styles.lootItemName, { color: getRarityColor(item.rarity) }]}>
+                    {item.name}
+                  </Text>
+                  {item.stats && (
+                    <Text style={styles.lootItemStats}>
+                      {Object.entries(item.stats).map(([stat, val]) => `${stat}: +${val}`).join(', ')}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Pressable style={styles.lootCloseButton} onPress={onClose}>
+          <Text style={styles.lootCloseButtonText}>Collect Loot</Text>
+        </Pressable>
+      </LinearGradient>
+    </View>
+  );
+}
+
+function getRarityColor(rarity: string): string {
+  switch (rarity) {
+    case 'Legendary': return '#ff9800';
+    case 'Epic': return '#9c27b0';
+    case 'Rare': return '#2196f3';
+    case 'Uncommon': return '#4caf50';
+    default: return '#8e8e93';
+  }
 }
 
 function BossArea({ bossName, hp, maxHp, currentPhase, isEnraged }: any) {
@@ -644,5 +730,89 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#ffffff'
+  },
+  lootModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  lootModalContent: {
+    width: '90%',
+    maxWidth: 500,
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 3,
+    borderColor: '#ffd700'
+  },
+  lootModalTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#ffd700',
+    textAlign: 'center',
+    marginBottom: 20
+  },
+  lootRewardsBox: {
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    gap: 8
+  },
+  lootReward: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff'
+  },
+  lootItemsBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16
+  },
+  lootItemsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 12
+  },
+  lootItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
+    padding: 12
+  },
+  lootItemIcon: {
+    fontSize: 32
+  },
+  lootItemInfo: {
+    flex: 1
+  },
+  lootItemName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4
+  },
+  lootItemStats: {
+    fontSize: 12,
+    color: '#8e8e93'
+  },
+  lootCloseButton: {
+    backgroundColor: '#ffd700',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  lootCloseButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a2e'
   }
 });

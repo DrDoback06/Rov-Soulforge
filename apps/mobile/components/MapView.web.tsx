@@ -167,8 +167,8 @@ export function MapView({
         ...viewState,
         longitude: location.longitude,
         latitude: location.latitude,
-        // Drive mode: tilted view with higher zoom, following bearing
-        pitch: driveMode ? 60 : 0,
+        // Drive mode: tilted view with higher zoom, following bearing (45° as requested)
+        pitch: driveMode ? 45 : 0,
         zoom: driveMode ? 17 : 14,
         bearing: driveMode ? newBearing : 0
       };
