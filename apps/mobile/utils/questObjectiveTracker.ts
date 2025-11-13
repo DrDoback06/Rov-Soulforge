@@ -2,6 +2,7 @@ import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 import type { EnhancedQuest, QuestObjective } from '@/types/quest-enhanced';
 import { distanceBetween } from 'geofire-common';
+import { questObjectiveCompleted, questCompleted } from './haptics';
 
 /**
  * Quest Objective Tracker
@@ -83,10 +84,21 @@ export async function updateObjectiveProgress(
   const progressData = docSnap.data() as QuestProgressData;
 
   // Update objective
+  let justCompletedObjective = false;
   const updatedObjectives = progressData.objectives.map(obj => {
     if (obj.id === objectiveId) {
+      const wasCompleted = obj.completed;
       const newCurrent = Math.min(obj.current + increment, obj.target);
       const isCompleted = newCurrent >= obj.target;
+
+      // Check if objective just completed (wasn't completed before, but is now)
+      if (!wasCompleted && isCompleted) {
+        justCompletedObjective = true;
+        // Trigger haptic feedback for objective completion
+        questObjectiveCompleted().catch(err =>
+          console.warn('Failed to trigger haptic feedback:', err)
+        );
+      }
 
       console.log(`📊 Objective progress: ${obj.description} - ${newCurrent}/${obj.target}`);
 
@@ -111,6 +123,11 @@ export async function updateObjectiveProgress(
     updates.status = 'completed';
     updates.completedAt = new Date().toISOString();
     console.log(`🎉 Quest completed!`);
+
+    // Trigger haptic feedback for quest completion
+    questCompleted().catch(err =>
+      console.warn('Failed to trigger haptic feedback:', err)
+    );
   }
 
   await updateDoc(docRef, updates);

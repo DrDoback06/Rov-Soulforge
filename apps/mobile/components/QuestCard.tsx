@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { EnhancedQuest } from '@/types/quest-enhanced';
+import { getRelativeDifficulty, getDifficultyColors, getDifficultyDisplayName } from '@/utils/questDifficulty';
 
 interface QuestProgress {
   id: string;
@@ -18,6 +19,7 @@ interface QuestProgress {
 interface QuestCardProps {
   quest: QuestProgress;
   distance?: number; // in meters
+  playerLevel?: number; // Player's current level for difficulty calculation
   onShowOnMap: () => void;
   onNavigate: () => void;
   onHide: () => void;
@@ -31,6 +33,7 @@ interface QuestCardProps {
 export function QuestCard({
   quest,
   distance,
+  playerLevel = 1,
   onShowOnMap,
   onNavigate,
   onHide,
@@ -41,7 +44,7 @@ export function QuestCard({
   isActive = false
 }: QuestCardProps) {
   const questDetails = quest.questDetails;
-  
+
   if (!questDetails) {
     return null; // Quest details not loaded
   }
@@ -52,8 +55,11 @@ export function QuestCard({
   // Format distance
   const distanceText = distance !== undefined ? formatDistance(distance) : null;
 
-  // Get difficulty colors
-  const difficultyColors = getDifficultyGradient(questDetails.difficulty);
+  // Get level-relative difficulty
+  const questLevel = questDetails.level || playerLevel;
+  const relativeDifficulty = getRelativeDifficulty(questLevel, playerLevel, questDetails.difficulty);
+  const difficultyColors = getDifficultyColors(relativeDifficulty);
+  const difficultyName = getDifficultyDisplayName(relativeDifficulty);
 
   return (
     <Pressable
@@ -91,13 +97,13 @@ export function QuestCard({
               </Text>
               
               <View style={styles.badgesRow}>
-                {/* Difficulty Badge */}
+                {/* Difficulty Badge with level-relative coloring */}
                 <LinearGradient
-                  colors={difficultyColors}
+                  colors={difficultyColors.gradient}
                   style={styles.difficultyBadge}
                 >
                   <Text style={styles.difficultyText}>
-                    {questDetails.difficulty.toUpperCase()}
+                    {difficultyName} {questLevel > playerLevel && `(Lv.${questLevel})`}
                   </Text>
                 </LinearGradient>
 
@@ -269,17 +275,6 @@ function formatDistance(meters: number): string {
     return `${Math.round(meters)}m`;
   }
   return `${(meters / 1000).toFixed(1)}km`;
-}
-
-function getDifficultyGradient(difficulty: string): [string, string] {
-  const gradients: Record<string, [string, string]> = {
-    easy: ['#4CAF50', '#2E7D32'],
-    medium: ['#FF9800', '#E65100'],
-    hard: ['#F44336', '#C62828'],
-    epic: ['#9C27B0', '#6A1B9A'],
-    legendary: ['#FFD700', '#FFA000']
-  };
-  return gradients[difficulty.toLowerCase()] || ['#2196F3', '#1565C0'];
 }
 
 const styles = StyleSheet.create({
