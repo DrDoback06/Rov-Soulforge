@@ -262,29 +262,40 @@ function StatBox({ label, value, max, icon, color }: any) {
 
 function EquipmentSlot({ slotId, slotName, icon, acceptedTypes, equippedItem, updateCharacter }: any) {
   const { dragState } = useDragDropContext();
-  const isDraggingCompatible = dragState.isDragging &&
-    dragState.itemData &&
-    acceptedTypes.includes(dragState.itemData.type);
+
+  // Check if dragging and if item is compatible
+  const isDragging = dragState.isDragging && dragState.itemData;
+  const isCompatible = isDragging && acceptedTypes.includes(dragState.itemData.type);
+  const isIncompatible = isDragging && !isCompatible;
 
   return (
     <DropZone
       zoneId={`equipment-${slotId}`}
       onDrop={async (itemId, itemData) => {
-        console.log(`Equipping ${itemData.name} to ${slotId}`);
+        // Validate item type before equipping
+        if (!acceptedTypes.includes(itemData.type)) {
+          console.warn(`❌ Cannot equip ${itemData.name} to ${slotName} slot. Expected types: ${acceptedTypes.join(', ')}, got: ${itemData.type}`);
+          // TODO: Show error toast to user
+          return;
+        }
+
+        console.log(`⚔️ Equipping ${itemData.name} (${itemData.type}) to ${slotId}`);
         try {
           // Update character equipment in Firestore using dot notation to merge
           await updateCharacter({
             [`equipped.${slotId}`]: itemId
           });
-          console.log(`Successfully equipped ${itemData.name} to ${slotId}`);
+          console.log(`✅ Successfully equipped ${itemData.name} to ${slotId}`);
         } catch (error) {
-          console.error('Failed to equip item:', error);
+          console.error('❌ Failed to equip item:', error);
+          // TODO: Show error toast to user
         }
       }}
     >
       <View style={[
         styles.equipmentSlot,
-        isDraggingCompatible && styles.equipmentSlotCompatible
+        isCompatible && styles.equipmentSlotCompatible,
+        isIncompatible && styles.equipmentSlotIncompatible
       ]}>
         {equippedItem ? (
           <DraggableItem
@@ -483,6 +494,10 @@ const styles = StyleSheet.create({
   equipmentSlotCompatible: {
     borderColor: '#4caf50',
     backgroundColor: 'rgba(76, 175, 80, 0.1)'
+  },
+  equipmentSlotIncompatible: {
+    borderColor: '#f44336',
+    backgroundColor: 'rgba(244, 67, 54, 0.1)'
   },
   emptySlot: {
     flex: 1,
