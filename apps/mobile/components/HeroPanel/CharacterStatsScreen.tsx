@@ -35,17 +35,17 @@ export function CharacterStatsScreen({ character, loading }: CharacterStatsScree
   const xpForNextLevel = character.level * 1000; // Simple formula
   const xpPercent = (character.counters.xp / xpForNextLevel) * 100;
 
-  // Core attributes (TODO: Add these to Character type)
+  // Core attributes
   const strength = character.stats.atk || 10;
   const dexterity = character.stats.spd || 10;
-  const intelligence = 10; // TODO: Add to type
+  const intelligence = character.stats.intelligence || 10;
   const vitality = character.stats.def || 10;
 
   // Combat stats
   const armor = character.stats.def * 2;
   const damage = character.stats.atk * 3;
   const critChance = Math.min(5 + (dexterity * 0.5), 50); // Max 50%
-  const magicFind = 0; // TODO: Add to type
+  const magicFind = character.stats.magicFind || 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

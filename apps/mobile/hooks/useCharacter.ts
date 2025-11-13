@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { doc, onSnapshot, getDoc, setDoc } from 'firebase/firestore';
+import { useEffect, useState, useCallback } from 'react';
+import { doc, onSnapshot, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import type { Character, ClassId, Alignment } from '@rov/types';
 import { useAuth } from './useAuth';
 import { useFirebase } from '@/lib/firebase-context';
@@ -44,7 +44,19 @@ export function useCharacter() {
     return () => unsubscribe();
   }, [user, db]);
 
-  return { character, loading, error };
+  /**
+   * Update character data in Firestore
+   */
+  const updateCharacter = useCallback(async (updates: Partial<Character>) => {
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+
+    const characterRef = doc(db, 'characters', user.uid);
+    await updateDoc(characterRef, updates);
+  }, [user, db]);
+
+  return { character, loading, error, updateCharacter };
 }
 
 /**

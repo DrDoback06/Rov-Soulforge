@@ -101,6 +101,30 @@ export function useBattle(battleId: string | null) {
     }
   });
 
+  // Surrender mutation
+  const surrenderMutation = useMutation({
+    mutationFn: async () => {
+      if (!functions || !battleId || !user) throw new Error('Battle not initialized');
+
+      const surrenderFn = httpsCallable(functions, 'surrender');
+      const result = await surrenderFn({
+        battleId,
+        playerId: user.uid,
+        timestamp: Date.now()
+      });
+
+      return result.data;
+    },
+    onSuccess: () => {
+      console.log('Successfully surrendered from battle');
+      // Invalidate battle query to refresh the state
+      queryClient.invalidateQueries({ queryKey: ['battle', battleId] });
+    },
+    onError: (error) => {
+      console.error('Surrender error:', error);
+    }
+  });
+
   // Play card from hand
   const playCard = (cardId: string, targets?: string[]) => {
     playCardMutation.mutate({ cardId, targets });
@@ -111,10 +135,9 @@ export function useBattle(battleId: string | null) {
     passTurnMutation.mutate();
   };
 
-  // Surrender (simplified for now)
+  // Surrender from battle
   const surrender = () => {
-    // TODO: Implement surrender functionality
-    console.log('Surrender not implemented yet');
+    surrenderMutation.mutate();
   };
 
   // Get current player's state
@@ -144,7 +167,7 @@ export function useBattle(battleId: string | null) {
     playCard,
     passTurn,
     surrender,
-    isExecuting: playCardMutation.isPending || passTurnMutation.isPending
+    isExecuting: playCardMutation.isPending || passTurnMutation.isPending || surrenderMutation.isPending
   };
 }
 

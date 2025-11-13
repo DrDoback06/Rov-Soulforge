@@ -20,7 +20,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
  * Similar to Diablo II character screen
  */
 export function CharacterPanel() {
-  const { character, loading } = useCharacter();
+  const { character, loading, updateCharacter } = useCharacter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [panelHeight] = useState(new Animated.Value(0));
 
@@ -59,8 +59,8 @@ export function CharacterPanel() {
             {character.classId || 'Character'}
           </Text>
           <View style={styles.quickStats}>
-            <Text style={styles.quickStatText}>❤️ {character.stats.hp}</Text>
-            <Text style={styles.quickStatText}>⚡ {character.stats.mana}</Text>
+            <Text style={styles.quickStatText}>❤️ {character.counters.hp}</Text>
+            <Text style={styles.quickStatText}>⚡ {character.counters.mana}</Text>
             <Text style={styles.quickStatText}>Lv.{character.level}</Text>
           </View>
         </LinearGradient>
@@ -95,9 +95,9 @@ export function CharacterPanel() {
                 <Text style={styles.characterClass}>{character.classId}</Text>
                 <Text style={styles.characterLevel}>Level {character.level}</Text>
                 <View style={styles.xpBar}>
-                  <View style={styles.xpBarFill} />
+                  <View style={[styles.xpBarFill, { width: `${Math.min((character.counters.xp / (character.level * 1000)) * 100, 100)}%` }]} />
                   <Text style={styles.xpText}>
-                    {character.xp} / {character.xpToNextLevel} XP
+                    {character.counters.xp} / {character.level * 1000} XP
                   </Text>
                 </View>
               </View>
@@ -107,12 +107,12 @@ export function CharacterPanel() {
             <View style={styles.statsSection}>
               <Text style={styles.sectionTitle}>📊 Stats</Text>
               <View style={styles.statsGrid}>
-                <StatBox label="HP" value={character.stats.hp} max={character.stats.maxHp} icon="❤️" color="#ff4444" />
-                <StatBox label="Mana" value={character.stats.mana} max={character.stats.maxMana} icon="⚡" color="#4488ff" />
+                <StatBox label="HP" value={character.counters.hp} max={character.stats.maxHp} icon="❤️" color="#ff4444" />
+                <StatBox label="Mana" value={character.counters.mana} max={character.stats.maxMana} icon="⚡" color="#4488ff" />
                 <StatBox label="Attack" value={character.stats.atk} icon="⚔️" color="#ff9800" />
                 <StatBox label="Defense" value={character.stats.def} icon="🛡️" color="#4caf50" />
                 <StatBox label="Speed" value={character.stats.spd} icon="💨" color="#00bcd4" />
-                <StatBox label="Lives" value={character.counters.lives} icon="💚" color="#8bc34a" />
+                <StatBox label="Lives" value={character.lives} icon="💚" color="#8bc34a" />
               </View>
             </View>
 
@@ -128,6 +128,7 @@ export function CharacterPanel() {
                     icon="⛑️"
                     acceptedTypes={['helmet', 'hat', 'crown']}
                     equippedItem={character.equipment?.head}
+                    updateCharacter={updateCharacter}
                   />
                   <EquipmentSlot
                     slotId="amulet"
@@ -135,6 +136,7 @@ export function CharacterPanel() {
                     icon="💎"
                     acceptedTypes={['amulet', 'necklace']}
                     equippedItem={character.equipment?.amulet}
+                    updateCharacter={updateCharacter}
                   />
                 </View>
 
@@ -146,6 +148,7 @@ export function CharacterPanel() {
                     icon="🛡️"
                     acceptedTypes={['armor', 'robe', 'chest']}
                     equippedItem={character.equipment?.chest}
+                    updateCharacter={updateCharacter}
                   />
                   <EquipmentSlot
                     slotId="gloves"
@@ -153,6 +156,7 @@ export function CharacterPanel() {
                     icon="🧤"
                     acceptedTypes={['gloves', 'gauntlets']}
                     equippedItem={character.equipment?.gloves}
+                    updateCharacter={updateCharacter}
                   />
                 </View>
 
@@ -164,6 +168,7 @@ export function CharacterPanel() {
                     icon="⚔️"
                     acceptedTypes={['weapon', 'sword', 'axe', 'staff', 'bow', 'dagger']}
                     equippedItem={character.equipment?.mainHand}
+                    updateCharacter={updateCharacter}
                   />
                   <EquipmentSlot
                     slotId="offHand"
@@ -171,6 +176,7 @@ export function CharacterPanel() {
                     icon="🛡️"
                     acceptedTypes={['shield', 'tome', 'orb', 'dagger']}
                     equippedItem={character.equipment?.offHand}
+                    updateCharacter={updateCharacter}
                   />
                 </View>
 
@@ -182,6 +188,7 @@ export function CharacterPanel() {
                     icon="👢"
                     acceptedTypes={['boots', 'shoes']}
                     equippedItem={character.equipment?.boots}
+                    updateCharacter={updateCharacter}
                   />
                   <EquipmentSlot
                     slotId="belt"
@@ -189,6 +196,7 @@ export function CharacterPanel() {
                     icon="📿"
                     acceptedTypes={['belt']}
                     equippedItem={character.equipment?.belt}
+                    updateCharacter={updateCharacter}
                   />
                 </View>
 
@@ -200,6 +208,7 @@ export function CharacterPanel() {
                     icon="💍"
                     acceptedTypes={['ring']}
                     equippedItem={character.equipment?.ring1}
+                    updateCharacter={updateCharacter}
                   />
                   <EquipmentSlot
                     slotId="ring2"
@@ -207,6 +216,7 @@ export function CharacterPanel() {
                     icon="💍"
                     acceptedTypes={['ring']}
                     equippedItem={character.equipment?.ring2}
+                    updateCharacter={updateCharacter}
                   />
                 </View>
               </View>
@@ -250,18 +260,26 @@ function StatBox({ label, value, max, icon, color }: any) {
   );
 }
 
-function EquipmentSlot({ slotId, slotName, icon, acceptedTypes, equippedItem }: any) {
+function EquipmentSlot({ slotId, slotName, icon, acceptedTypes, equippedItem, updateCharacter }: any) {
   const { dragState } = useDragDropContext();
-  const isDraggingCompatible = dragState.isDragging && 
-    dragState.itemData && 
+  const isDraggingCompatible = dragState.isDragging &&
+    dragState.itemData &&
     acceptedTypes.includes(dragState.itemData.type);
 
   return (
     <DropZone
       zoneId={`equipment-${slotId}`}
-      onDrop={(itemId, itemData) => {
+      onDrop={async (itemId, itemData) => {
         console.log(`Equipping ${itemData.name} to ${slotId}`);
-        // TODO: Update character equipment in Firestore
+        try {
+          // Update character equipment in Firestore using dot notation to merge
+          await updateCharacter({
+            [`equipped.${slotId}`]: itemId
+          });
+          console.log(`Successfully equipped ${itemData.name} to ${slotId}`);
+        } catch (error) {
+          console.error('Failed to equip item:', error);
+        }
       }}
     >
       <View style={[
@@ -397,7 +415,6 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: '60%', // TODO: Calculate from XP
     backgroundColor: '#4caf50'
   },
   xpText: {

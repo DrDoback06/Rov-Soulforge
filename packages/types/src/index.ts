@@ -29,6 +29,8 @@ export interface Character {
     atk: number;
     def: number;
     spd: number;
+    intelligence?: number;
+    magicFind?: number;
     maxHp?: number;
     maxMana?: number;
   };
