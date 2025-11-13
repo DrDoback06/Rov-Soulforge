@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { EnhancedQuest } from '@/types/quest-enhanced';
 import { getRelativeDifficulty, getDifficultyColors, getDifficultyDisplayName } from '@/utils/questDifficulty';
+import { useFormattedQuestTimer } from '@/hooks/useQuestTimer';
 
 interface QuestProgress {
   id: string;
@@ -61,6 +62,9 @@ export function QuestCard({
   const difficultyColors = getDifficultyColors(relativeDifficulty);
   const difficultyName = getDifficultyDisplayName(relativeDifficulty);
 
+  // Get expiration timer
+  const timer = useFormattedQuestTimer(questDetails.expiresAt, true);
+
   return (
     <Pressable
       onPress={onExpand}
@@ -112,6 +116,20 @@ export function QuestCard({
                   <View style={styles.distanceBadge}>
                     <Text style={styles.distanceIcon}>📍</Text>
                     <Text style={styles.distanceText}>{distanceText}</Text>
+                  </View>
+                )}
+
+                {/* Expiration Timer Badge */}
+                {timer.formatted && (
+                  <View style={[
+                    styles.timerBadge,
+                    timer.isExpiringVerySoon && styles.timerBadgeUrgent,
+                    timer.isExpiringSoon && !timer.isExpiringVerySoon && styles.timerBadgeWarning
+                  ]}>
+                    <Text style={styles.timerIcon}>{timer.icon}</Text>
+                    <Text style={[styles.timerText, { color: timer.color }]}>
+                      {timer.formatted}
+                    </Text>
                   </View>
                 )}
 
@@ -373,6 +391,28 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#4FC3F7'
+  },
+  timerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4
+  },
+  timerBadgeWarning: {
+    backgroundColor: 'rgba(255, 152, 0, 0.2)'
+  },
+  timerBadgeUrgent: {
+    backgroundColor: 'rgba(244, 67, 54, 0.2)'
+  },
+  timerIcon: {
+    fontSize: 10
+  },
+  timerText: {
+    fontSize: 10,
+    fontWeight: '600'
   },
   legendaryBadge: {
     backgroundColor: 'rgba(255, 215, 0, 0.2)',
