@@ -8,6 +8,32 @@ A GPS-enabled fitness RPG companion app that transforms physical activity into e
 
 **Environment Status:** ✅ All configured and ready!
 
+### 🎯 Easiest Way to Launch (NEW!)
+
+We've created an interactive launcher that handles everything automatically:
+
+**Mac/Linux:**
+```bash
+./launch.sh
+```
+
+**Windows:**
+```cmd
+launch.bat
+```
+
+**Or use Node directly:**
+```bash
+node launcher.js
+```
+
+The launcher will:
+- ✅ Check prerequisites (Node.js, pnpm)
+- ✅ Install dependencies automatically
+- ✅ Set up environment files
+- ✅ Launch mobile app, backend server, or both
+- ✅ Provide system info and cleanup tools
+
 ### Having trouble getting the app to load?
 
 👉 **[GET_APP_RUNNING.md](./GET_APP_RUNNING.md)** - Complete troubleshooting guide (START HERE)
