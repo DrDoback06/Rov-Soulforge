@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer } from 'react-map-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import Map, { Marker, NavigationControl, GeolocateControl, Source, Layer } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Quest } from '@rov/types';
 import type { EnhancedQuest } from '@/types/quest-enhanced';
 

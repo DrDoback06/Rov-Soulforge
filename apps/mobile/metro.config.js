@@ -23,9 +23,21 @@ const assetExts = config.resolver.assetExts.filter(
 );
 
 // 4) Add source extensions including audio as source (not asset)
-const sourceExts = [...config.resolver.sourceExts, 'cjs', 'mjs', 'mp3', 'wav', 'ogg', 'm4a', 'aac', 'mpeg'];
+const sourceExts = [...config.resolver.sourceExts, 'cjs', 'mjs'];
 
 config.resolver.assetExts = assetExts;
 config.resolver.sourceExts = sourceExts;
+
+// 5) Enable package exports to fix react-map-gl dynamic imports
+config.resolver.unstable_enablePackageExports = true;
+
+// 6) Disable require cycle warnings (common in React Native)
+config.resolver.unstable_enableSymlinks = true;
+
+// 7) Disable strict mode for web to allow dynamic imports
+config.transformer = {
+  ...config.transformer,
+  unstable_allowRequireContext: true,
+};
 
 module.exports = config;
