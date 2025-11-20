@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { httpsCallable } from 'firebase/functions';
 import type { ActivitySource, ActivityKind } from '@rov/types';
+import { useFirebase } from '@/lib/firebase-context';
+import { useAuth } from '@/hooks/useAuth';
+import { validateActivity, calculateFitnessRewards } from '@/utils/fitnessRewards';
 
 /**
  * Fitness Activity Submission Screen
@@ -15,8 +19,10 @@ import type { ActivitySource, ActivityKind } from '@rov/types';
  */
 
 export default function SubmitActivityScreen() {
-  const [activityType, setActivityType] = useState<ActivityKind>('running');
-  const [source, setSource] = useState<ActivitySource>('manual');
+  const { functions } = useFirebase();
+  const { user } = useAuth();
+  const [activityType, setActivityType] = useState<ActivityKind>('run');
+  const [source, setSource] = useState<ActivitySource>('Strava');
   const [distanceKm, setDistanceKm] = useState('');
   const [durationMin, setDurationMin] = useState('');
   const [avgHr, setAvgHr] = useState('');
@@ -25,20 +31,19 @@ export default function SubmitActivityScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const activityTypes: ActivityKind[] = [
-    'running',
-    'walking',
-    'cycling',
-    'hiking',
-    'swimming'
+    'run',
+    'walk',
+    'bike',
+    'hike',
+    'hr-session'
   ];
 
   const sources: { value: ActivitySource; label: string }[] = [
-    { value: 'manual', label: 'Manual Entry' },
-    { value: 'healthkit', label: 'Apple Health' },
-    { value: 'googlefit', label: 'Google Fit' },
-    { value: 'strava', label: 'Strava' },
-    { value: 'garmin', label: 'Garmin' },
-    { value: 'whoop', label: 'WHOOP' }
+    { value: 'Strava', label: 'Strava' },
+    { value: 'HealthKit', label: 'Apple Health' },
+    { value: 'Fit', label: 'Google Fit' },
+    { value: 'Garmin', label: 'Garmin' },
+    { value: 'WHOOP', label: 'WHOOP' }
   ];
 
   const handleSubmit = async () => {
@@ -79,8 +84,15 @@ export default function SubmitActivityScreen() {
     setSubmitting(true);
 
     try {
-      // Submit activity via Firebase function
+      if (!functions || !user) {
+        Alert.alert('Error', 'Not authenticated');
+        return;
+      }
+
+      // Prepare activity data
       const activity = {
+        id: `activity_${user.uid}_${Date.now()}`,
+        uid: user.uid,
         source,
         kind: activityType,
         start: Date.now() - duration * 60 * 1000,
@@ -96,21 +108,48 @@ export default function SubmitActivityScreen() {
         }
       };
 
-      // Call Firebase function
-      // await submitActivity(activity);
+      // Validate activity
+      const validation = validateActivity(activity);
+      if (!validation.valid) {
+        Alert.alert(
+          'Activity Validation Failed',
+          validation.issues.join('\n')
+        );
+        setSubmitting(false);
+        return;
+      }
 
-      Alert.alert(
-        'Activity Submitted!',
-        'Your activity has been recorded and will be verified.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back()
-          }
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit activity. Please try again.');
+      // Preview rewards
+      const previewRewards = calculateFitnessRewards(activity, 0, 0);
+
+      // Submit activity via Firebase Cloud Function
+      const submitActivityFn = httpsCallable(functions, 'submitActivity');
+      const result = await submitActivityFn({ activity });
+
+      const data = result.data as any;
+
+      if (data.success) {
+        Alert.alert(
+          '✅ Activity Recorded!',
+          `Rewards earned:\n` +
+          `💰 Gold: +${data.rewards?.gold || 0}\n` +
+          `⭐ XP: +${data.rewards?.xp || 0}\n` +
+          (data.rewards?.temporaryBuffs?.length > 0 
+            ? `\n🔥 Temporary buffs applied!` 
+            : ''),
+          [
+            {
+              text: 'Awesome!',
+              onPress: () => router.back()
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', data.error || 'Failed to submit activity');
+      }
+    } catch (error: any) {
+      console.error('Submit activity error:', error);
+      Alert.alert('Error', error.message || 'Failed to submit activity. Please try again.');
     } finally {
       setSubmitting(false);
     }

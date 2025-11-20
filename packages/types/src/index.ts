@@ -44,6 +44,48 @@ export interface Character {
   gold: number;
 }
 
+export interface ComputedStats {
+  // Base stats from character class/level
+  base: {
+    atk: number;
+    def: number;
+    spd: number;
+    maxHp: number;
+    maxMana: number;
+  };
+  
+  // Bonuses from equipped items
+  equipment: {
+    atk: number;
+    def: number;
+    spd: number;
+    hp: number;
+    mana: number;
+    strength: number;
+    dexterity: number;
+    intelligence: number;
+    vitality: number;
+  };
+  
+  // Temporary buffs from fitness activities
+  buffs: {
+    atk: number;
+    def: number;
+    maxHp: number;
+    maxMana: number;
+    expiresAt?: number;
+  };
+  
+  // Final computed totals
+  total: {
+    atk: number;
+    def: number;
+    spd: number;
+    maxHp: number;
+    maxMana: number;
+  };
+}
+
 export interface ItemInstance {
   id: string;
   cardId: string;
@@ -620,6 +662,7 @@ export interface PaginatedResponse<T> {
 export type {
   User,
   Character,
+  ComputedStats,
   ItemInstance,
   CardDef,
   GameCard,

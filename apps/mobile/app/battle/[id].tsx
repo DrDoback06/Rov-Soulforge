@@ -1,7 +1,11 @@
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 import { useBattle } from '@/hooks/useBattle';
+import { BattleHand } from '@/components/BattleHand';
+import { StackPanel } from '@/components/StackPanel';
+import { DiceRoller } from '@/components/DiceRoller';
 
 /**
  * Battle Screen - Full battleground UI with real-time Firebase updates
@@ -19,6 +23,10 @@ export default function BattleScreen() {
     surrender,
     isExecuting
   } = useBattle(id as string);
+
+  const [showDice, setShowDice] = useState(false);
+  const [diceReason, setDiceReason] = useState('');
+  const [diceSeed, setDiceSeed] = useState<string | undefined>();
 
   if (isLoading) {
     return (
@@ -54,10 +62,10 @@ export default function BattleScreen() {
         {/* Opponent area */}
         <OpponentArea playerState={opponentState} />
 
-        {/* Stack display */}
+        {/* Enhanced Stack display */}
         <StackPanel stack={battle.stack || []} />
 
-        {/* Player area */}
+        {/* Player area with enhanced hand */}
         <PlayerArea
           playerState={myPlayerState}
           isMyTurn={isMyTurn}
@@ -70,6 +78,18 @@ export default function BattleScreen() {
 
       {/* Turn indicator */}
       <TurnIndicator isMyTurn={isMyTurn} />
+
+      {/* Dice Roller Modal */}
+      <DiceRoller
+        visible={showDice}
+        onRoll={(result) => {
+          console.log('Dice rolled:', result);
+          setShowDice(false);
+        }}
+        onClose={() => setShowDice(false)}
+        reason={diceReason}
+        seed={diceSeed}
+      />
     </View>
   );
 }
@@ -112,30 +132,7 @@ function OpponentArea({ playerState }: { playerState: any }) {
   );
 }
 
-function StackPanel({ stack }: { stack: any[] }) {
-  if (stack.length === 0) {
-    return (
-      <View style={styles.stackPanel}>
-        <Text style={styles.stackEmpty}>The Stack is empty</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.stackPanel}>
-      <Text style={styles.stackTitle}>The Stack ({stack.length})</Text>
-      {stack.map((item, index) => (
-        <LinearGradient
-          key={index}
-          colors={['#4488ff', '#2244cc']}
-          style={styles.stackItem}
-        >
-          <Text style={styles.stackItemText}>{item.cardName || 'Card Effect'}</Text>
-        </LinearGradient>
-      ))}
-    </View>
-  );
-}
+// Removed - Using enhanced StackPanel component now
 
 function PlayerArea({
   playerState,
@@ -181,9 +178,14 @@ function PlayerArea({
           <DeckPile type="Loot" count={playerState.lootDeck?.length || 0} />
         </View>
 
+        {/* Enhanced Battle Hand with drag-drop */}
         <View style={styles.handSection}>
-          <Text style={styles.handLabel}>Hand ({playerState.hand?.length || 0})</Text>
-          <HandDisplay cards={playerState.hand || []} onPlayCard={onPlayCard} isMyTurn={isMyTurn} />
+          <BattleHand
+            cards={playerState.hand || []}
+            onCardPlay={onPlayCard}
+            isMyTurn={isMyTurn}
+            disabled={isExecuting}
+          />
         </View>
 
         <View style={styles.actionsRow}>
@@ -225,46 +227,7 @@ function DeckPile({ type, count }: { type: string; count: number }) {
   );
 }
 
-function HandDisplay({
-  cards,
-  onPlayCard,
-  isMyTurn
-}: {
-  cards: any[];
-  onPlayCard: (cardId: string) => void;
-  isMyTurn: boolean;
-}) {
-  if (cards.length === 0) {
-    return (
-      <View style={styles.emptyHand}>
-        <Text style={styles.emptyHandText}>No cards in hand</Text>
-      </View>
-    );
-  }
-
-  return (
-    <ScrollView horizontal style={styles.handDisplay} contentContainerStyle={styles.handContent}>
-      {cards.map((card, index) => (
-        <Pressable
-          key={index}
-          style={styles.handCard}
-          onPress={() => isMyTurn && onPlayCard(card.id)}
-          disabled={!isMyTurn}
-        >
-          <LinearGradient
-            colors={getCardColors(card.type)}
-            style={styles.handCardGradient}
-          >
-            <Text style={styles.handCardMana}>⚡{card.cost || 0}</Text>
-            <Text style={styles.handCardName} numberOfLines={2}>
-              {card.name}
-            </Text>
-          </LinearGradient>
-        </Pressable>
-      ))}
-    </ScrollView>
-  );
-}
+// Removed - Using enhanced BattleHand component now
 
 function getCardColors(cardType: string): [string, string] {
   const colors: Record<string, [string, string]> = {
@@ -407,78 +370,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#8e8e93'
   },
-  stackPanel: {
-    padding: 16,
-    minHeight: 100,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  stackEmpty: {
-    fontSize: 14,
-    color: '#5e5e6e',
-    fontStyle: 'italic'
-  },
-  stackTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 12
-  },
-  stackItem: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    minWidth: '80%'
-  },
-  stackItemText: {
-    fontSize: 14,
-    color: '#ffffff',
-    textAlign: 'center',
-    fontWeight: '600'
-  },
   handSection: {
     marginBottom: 16
-  },
-  handLabel: {
-    fontSize: 14,
-    color: '#8e8e93',
-    marginBottom: 8,
-    textTransform: 'uppercase'
-  },
-  handDisplay: {
-    maxHeight: 120
-  },
-  handContent: {
-    gap: 8
-  },
-  emptyHand: {
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  emptyHandText: {
-    fontSize: 14,
-    color: '#5e5e6e'
-  },
-  handCard: {
-    width: 80,
-    height: 110
-  },
-  handCardGradient: {
-    flex: 1,
-    borderRadius: 8,
-    padding: 8,
-    justifyContent: 'space-between'
-  },
-  handCardMana: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#ffffff'
-  },
-  handCardName: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#ffffff'
   },
   actionsRow: {
     flexDirection: 'row',

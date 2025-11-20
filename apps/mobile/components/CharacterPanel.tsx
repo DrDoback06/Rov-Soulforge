@@ -20,7 +20,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
  * Similar to Diablo II character screen
  */
 export function CharacterPanel() {
-  const { character, loading } = useCharacter();
+  const { character, computedStats, loading } = useCharacter();
   const [isExpanded, setIsExpanded] = useState(false);
   const [panelHeight] = useState(new Animated.Value(0));
 
@@ -105,14 +105,46 @@ export function CharacterPanel() {
 
             {/* Stats Grid */}
             <View style={styles.statsSection}>
-              <Text style={styles.sectionTitle}>📊 Stats</Text>
+              <Text style={styles.sectionTitle}>📊 Stats {computedStats && '(with Equipment)'}</Text>
               <View style={styles.statsGrid}>
-                <StatBox label="HP" value={character.stats.hp} max={character.stats.maxHp} icon="❤️" color="#ff4444" />
-                <StatBox label="Mana" value={character.stats.mana} max={character.stats.maxMana} icon="⚡" color="#4488ff" />
-                <StatBox label="Attack" value={character.stats.atk} icon="⚔️" color="#ff9800" />
-                <StatBox label="Defense" value={character.stats.def} icon="🛡️" color="#4caf50" />
-                <StatBox label="Speed" value={character.stats.spd} icon="💨" color="#00bcd4" />
-                <StatBox label="Lives" value={character.counters.lives} icon="💚" color="#8bc34a" />
+                <StatBox 
+                  label="HP" 
+                  value={character.counters.hp} 
+                  max={computedStats?.total.maxHp || character.stats.maxHp} 
+                  bonus={computedStats ? computedStats.total.maxHp - computedStats.base.maxHp : 0}
+                  icon="❤️" 
+                  color="#ff4444" 
+                />
+                <StatBox 
+                  label="Mana" 
+                  value={character.counters.mana} 
+                  max={computedStats?.total.maxMana || character.stats.maxMana} 
+                  bonus={computedStats ? computedStats.total.maxMana - computedStats.base.maxMana : 0}
+                  icon="⚡" 
+                  color="#4488ff" 
+                />
+                <StatBox 
+                  label="Attack" 
+                  value={computedStats?.total.atk || character.stats.atk} 
+                  bonus={computedStats ? computedStats.total.atk - computedStats.base.atk : 0}
+                  icon="⚔️" 
+                  color="#ff9800" 
+                />
+                <StatBox 
+                  label="Defense" 
+                  value={computedStats?.total.def || character.stats.def} 
+                  bonus={computedStats ? computedStats.total.def - computedStats.base.def : 0}
+                  icon="🛡️" 
+                  color="#4caf50" 
+                />
+                <StatBox 
+                  label="Speed" 
+                  value={computedStats?.total.spd || character.stats.spd} 
+                  bonus={computedStats ? computedStats.total.spd - computedStats.base.spd : 0}
+                  icon="💨" 
+                  color="#00bcd4" 
+                />
+                <StatBox label="Lives" value={character.lives} icon="💚" color="#8bc34a" />
               </View>
             </View>
 
@@ -238,7 +270,7 @@ export function CharacterPanel() {
 }
 
 // Sub-components
-function StatBox({ label, value, max, icon, color }: any) {
+function StatBox({ label, value, max, bonus, icon, color }: any) {
   return (
     <View style={styles.statBox}>
       <Text style={styles.statIcon}>{icon}</Text>
@@ -246,6 +278,9 @@ function StatBox({ label, value, max, icon, color }: any) {
       <Text style={[styles.statValue, { color }]}>
         {value}{max ? `/${max}` : ''}
       </Text>
+      {bonus > 0 && (
+        <Text style={styles.statBonus}>+{bonus}</Text>
+      )}
     </View>
   );
 }
@@ -442,6 +477,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: 'bold'
+  },
+  statBonus: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#4caf50',
+    marginTop: 2
   },
   equipmentSection: {
     padding: 16,
