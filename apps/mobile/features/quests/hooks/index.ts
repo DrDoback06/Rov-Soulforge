@@ -14,3 +14,4 @@ export { useQuestPanel } from './useQuestPanel';
 export { useQuestProximity } from './useQuestProximity';
 export { useQuests } from './useQuests';
 export { useSavedQuests } from './useSavedQuests';
+export { useQuestProgressTracker } from './useQuestProgressTracker';

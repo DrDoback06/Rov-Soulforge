@@ -18,7 +18,11 @@ export interface UseSimpleBattleReturn {
   // Actions
   playCard: (cardId: string) => void;
   endTurn: () => void;
-  startBattle: (playerCharacter: Character, opponentName?: string) => void;
+  startBattle: (
+    playerCharacter: Character,
+    opponentName?: string,
+    difficulty?: 'easy' | 'normal' | 'hard' | 'boss'
+  ) => void;
 
   // Computed
   isPlayerTurn: boolean;
@@ -39,27 +43,34 @@ export function useSimpleBattle(): UseSimpleBattleReturn {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Start a new battle
+   * Start a new battle with optional difficulty
    */
-  const startBattle = useCallback((playerCharacter: Character, opponentName: string = 'Goblin') => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const startBattle = useCallback(
+    (
+      playerCharacter: Character,
+      opponentName: string = 'Goblin',
+      difficulty: 'easy' | 'normal' | 'hard' | 'boss' = 'normal'
+    ) => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      console.log('🎮 Starting battle:', { playerCharacter, opponentName });
+        console.log('🎮 Starting battle:', { playerCharacter, opponentName, difficulty });
 
-      const battleEngine = new SimpleBattleEngine(playerCharacter, opponentName);
-      setEngine(battleEngine);
-      setBattleState(battleEngine.getState());
+        const battleEngine = new SimpleBattleEngine(playerCharacter, opponentName, difficulty);
+        setEngine(battleEngine);
+        setBattleState(battleEngine.getState());
 
-      console.log('✅ Battle started successfully');
-      setIsLoading(false);
-    } catch (err) {
-      console.error('❌ Error starting battle:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start battle');
-      setIsLoading(false);
-    }
-  }, []);
+        console.log('✅ Battle started successfully');
+        setIsLoading(false);
+      } catch (err) {
+        console.error('❌ Error starting battle:', err);
+        setError(err instanceof Error ? err.message : 'Failed to start battle');
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   /**
    * Play a card
