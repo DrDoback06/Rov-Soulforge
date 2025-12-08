@@ -10,7 +10,6 @@
     "import-cards": "pnpm --filter @rov/importer start",
     "import:db": "pnpm --filter @rov/importer import:db",
     "mobile": "pnpm --filter mobile start",
-    "backend": "pnpm --filter backend dev",
     "admin": "pnpm --filter admin dev",
     "firebase:deploy": "cd packages/firebase && firebase deploy",
     "firebase:emulators": "cd packages/firebase && firebase emulators:start"

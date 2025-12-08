@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "your-firebase-project-id",
+    "development": "your-firebase-project-id-dev",
+    "staging": "your-firebase-project-id-staging",
+    "production": "your-firebase-project-id-prod"
+  },
+  "targets": {},
+  "etags": {}
+}
