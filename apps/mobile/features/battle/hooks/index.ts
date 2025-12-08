@@ -2,4 +2,5 @@
  * Battle Hooks
  */
 
-export { useBattle } from './useBattle';
+export { useBattle, useCreateBattle } from './useBattle';
+export { useSimpleBattle } from './useSimpleBattle';

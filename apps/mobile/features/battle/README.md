@@ -1,313 +1,271 @@
 # ⚔️ Battle System
 
 ## Overview
-The Battle System handles all combat functionality including card-based battles, turn management, effect resolution, and AI opponents.
+The Battle System handles all combat functionality including card-based battles, turn management, and basic AI opponents.
 
 ## Purpose
-- **Build from scratch** - Previous implementation never worked
-- Provide working turn-based card battle system
-- Handle PvP and PvE battles
-- Manage LIFO stack-based effect resolution
-- Support AI opponents with configurable behavior
-- Integrate with quest system for battle objectives
+- **Built from scratch** - Previous implementation never worked
+- Provide WORKING, simple turn-based card battle system
+- Local-first approach (no Firebase dependency initially)
+- Simple card types: attack, heal, buff
+- Basic AI opponent that plays cards automatically
+- Integration ready for quest system
+
+## Current Implementation Status
+✅ **SimpleBattleEngine** - Core battle logic complete (~300 lines)
+✅ **useSimpleBattle** - React hook for battle state (~130 lines)
+✅ **BattleCard** - Card visual component (~120 lines)
+✅ **BattleScreen** - Full battle UI (~300 lines)
+⏳ **Testing** - Need to verify in Expo app
+⏳ **Quest Integration** - Connect to quest system
+⏳ **Firebase Sync** - Add server-side battle state (future)
 
 ## Structure
 
 ```
 battle/
 ├── README.md (this file)
-├── ui/                  # Battle screen UI components
-│   ├── BattleScreen.tsx         # Main battle screen container (~200 lines)
-│   ├── BattleField.tsx          # Battle field display (~150 lines)
-│   ├── PlayerArea.tsx           # Player HP/mana/stats (~100 lines)
-│   ├── OpponentArea.tsx         # Opponent HP/mana/stats (~100 lines)
-│   ├── HandDisplay.tsx          # Player's hand of cards (~150 lines)
-│   ├── StackDisplay.tsx         # Effect stack visualization (~100 lines)
-│   └── index.ts
 ├── engine/              # Core battle logic
-│   ├── BattleEngine.ts          # Main battle state machine (~300 lines)
-│   ├── TurnManager.ts           # Turn order and timing (~200 lines)
-│   ├── StackResolver.ts         # LIFO effect stack (~250 lines)
-│   ├── EffectProcessor.ts       # Process card effects (~200 lines)
-│   └── index.ts
-├── cards/               # Card rendering and actions
-│   ├── CardRenderer.tsx         # Render game cards (~150 lines)
-│   ├── CardActions.ts           # Card play/discard logic (~150 lines)
-│   ├── CardEffects.ts           # Card effect definitions (~200 lines)
-│   └── index.ts
-├── ai/                  # AI opponent logic
-│   ├── AIController.ts          # AI decision making (~250 lines)
-│   ├── AIStrategy.ts            # AI behavior patterns (~200 lines)
-│   └── index.ts
+│   ├── BattleEngine.ts          # ✅ SimpleBattleEngine class (~300 lines)
+│   └── index.ts                 # ✅ Exports engine and types
 ├── hooks/               # React hooks for battles
-│   ├── useBattle.ts             # Main battle hook (~150 lines)
-│   ├── useBattleActions.ts      # Battle actions hook (~150 lines)
+│   ├── useSimpleBattle.ts       # ✅ Main battle hook (~130 lines)
+│   └── index.ts                 # ✅ Exports hooks
+├── ui/                  # Battle screen UI components
+│   ├── BattleScreen.tsx         # ✅ Main battle screen (~300 lines)
+│   ├── BattleCard.tsx           # ✅ Card component (~120 lines)
+│   └── index.ts                 # ✅ Exports UI components
+├── ai/                  # AI opponent (placeholder)
 │   └── index.ts
-└── types.ts             # Battle-specific types
+├── cards/               # Card system (placeholder)
+│   └── index.ts
+└── types.ts             # Battle-specific types (placeholder)
 ```
+
+**Simple Implementation:**
+- Single `SimpleBattleEngine` class handles all game logic
+- Basic AI built into engine (plays random valid cards)
+- All state managed locally (no Firebase yet)
+- Three card types: attack (damage), heal (restore HP), buff (increase attack)
 
 ## Key Features
 
-### 1. Battle UI (`ui/`)
+### 1. SimpleBattleEngine (`engine/BattleEngine.ts`)
 
-**BattleScreen.tsx** - Main battle container
+**Core battle logic** - Single class managing entire battle flow
+
 ```typescript
-<BattleScreen battleId="battle_123">
-  <OpponentArea />
-  <BattleField />
-  <PlayerArea />
-  <HandDisplay />
-  <StackDisplay />
-</BattleScreen>
-```
-
-**Components:**
-- **BattleField.tsx**: Central battlefield area showing active cards/effects
-- **PlayerArea.tsx**: Player stats (HP, mana, deck count, discard count)
-- **OpponentArea.tsx**: Opponent stats (HP, mana, deck count)
-- **HandDisplay.tsx**: Player's hand of cards (drag to play)
-- **StackDisplay.tsx**: Visual stack of effects resolving (LIFO order)
-
-### 2. Battle Engine (`engine/`)
-
-**BattleEngine.ts** - Core battle state machine
-```typescript
-class BattleEngine {
-  // Initialize battle
-  async start(player1: Character, player2: Character): Promise<Battle>;
-
-  // Play a card
-  async playCard(cardId: string, targets?: Target[]): Promise<void>;
-
-  // Pass turn
-  async passTurn(): Promise<void>;
-
-  // Check win condition
-  checkWinCondition(): 'player1' | 'player2' | 'draw' | null;
+class SimpleBattleEngine {
+  constructor(playerCharacter: Character, opponentName: string = 'Goblin')
 
   // Get current battle state
-  getState(): BattleState;
+  getState(): SimpleBattleState
+
+  // Play a card from player's hand
+  playCard(cardId: string): { success: boolean; message: string }
+
+  // End player's turn (triggers AI turn automatically)
+  endTurn(): void
+
+  // Private methods
+  private initializeBattle(...)
+  private drawCards(isPlayer: boolean, count: number)
+  private applyCardEffect(card: SimpleCard, isPlayer: boolean)
+  private executeAITurn()
+  private checkGameOver()
 }
 ```
 
-**TurnManager.ts** - Turn order and timing
+**Battle State:**
 ```typescript
-class TurnManager {
-  // Start new turn
-  startTurn(playerId: string): void;
-
-  // End current turn
-  endTurn(): void;
-
-  // Get current turn player
-  getCurrentPlayer(): string;
-
-  // Calculate turn order
-  calculateInitiative(players: Player[]): string[];
+interface SimpleBattleState {
+  id: string;
+  player: {
+    characterId: string;
+    name: string;
+    hp: number;
+    maxHp: number;
+    mana: number;
+    maxMana: number;
+    hand: SimpleCard[];
+    deck: SimpleCard[];
+    discard: SimpleCard[];
+  };
+  opponent: { /* same structure */ };
+  currentTurn: 'player' | 'opponent';
+  turnNumber: number;
+  battleLog: string[];
+  winner: 'player' | 'opponent' | null;
+  status: 'active' | 'ended';
 }
 ```
 
-**StackResolver.ts** - LIFO effect stack resolution
+**Card Types:**
 ```typescript
-class StackResolver {
-  // Add effect to stack
-  push(effect: StackItem): void;
-
-  // Resolve top of stack (LIFO)
-  async resolveNext(): Promise<void>;
-
-  // Resolve entire stack
-  async resolveAll(): Promise<void>;
-
-  // Get stack contents
-  getStack(): StackItem[];
+interface SimpleCard {
+  id: string;
+  name: string;
+  type: 'attack' | 'heal' | 'buff';
+  value: number;      // Damage/heal amount/buff value
+  manaCost: number;
+  description: string;
 }
 ```
 
-**EffectProcessor.ts** - Process card effects
-```typescript
-class EffectProcessor {
-  // Process a single effect
-  async processEffect(effect: EffectDef, context: BattleContext): Promise<void>;
+### 2. useSimpleBattle Hook (`hooks/useSimpleBattle.ts`)
 
-  // Supported effects:
-  // - Damage (deal damage)
-  // - Heal (restore HP)
-  // - Draw (draw cards)
-  // - Mana (gain/lose mana)
-  // - Status (apply buffs/debuffs)
-  // - Summon (summon creatures)
-  // - Transform (change cards)
-}
+**React hook** - Manages battle state in components
+
+```typescript
+const {
+  battleState,      // Current battle state
+  playCard,         // (cardId: string) => void
+  endTurn,          // () => void
+  startBattle,      // (char: Character, opponent?: string) => void
+  isPlayerTurn,     // boolean
+  isGameOver,       // boolean
+  winner,           // 'player' | 'opponent' | null
+} = useSimpleBattle();
 ```
 
-### 3. Card System (`cards/`)
+### 3. BattleScreen (`ui/BattleScreen.tsx`)
 
-**CardRenderer.tsx** - Render cards visually
+**Complete battle UI** - Full game screen
+
+**Layout:**
+- **Battle Log** (scrollable) - Shows turn-by-turn actions
+- **Opponent Area** - Name, HP/mana bars, deck/discard counts
+- **Turn Indicator** - Shows whose turn it is
+- **Player Area** - HP/mana stats, deck/discard counts
+- **Player Hand** - Horizontal scroll of playable cards
+- **End Turn Button** - Pass turn to opponent
+
 ```typescript
-<CardRenderer
-  card={card}
-  onClick={() => playCard(card.id)}
-  disabled={!canPlay(card)}
+<BattleScreen
+  playerCharacter={character}
+  opponentName="Goblin"
+  onBattleEnd={(winner) => {/* handle result */}}
 />
 ```
 
-**CardActions.ts** - Card play logic
+### 4. BattleCard (`ui/BattleCard.tsx`)
+
+**Card visual component** - Displays individual cards
+
+**Features:**
+- Color-coded by type (red=attack, green=heal, blue=buff)
+- Shows mana cost
+- Shows card value with icon
+- Disabled state when not playable
+- Press to play card
+
 ```typescript
-class CardActions {
-  // Can player afford to play card?
-  canPlay(card: GameCard, player: BattlePlayerState): boolean;
-
-  // Play card from hand
-  async playCard(card: GameCard, targets?: Target[]): Promise<void>;
-
-  // Discard card
-  discardCard(cardId: string): void;
-
-  // Draw cards
-  drawCards(count: number): GameCard[];
-}
-```
-
-**CardEffects.ts** - Card effect definitions
-```typescript
-const CARD_EFFECTS = {
-  fireball: {
-    type: 'damage',
-    amount: 5,
-    target: 'enemy',
-    element: 'fire'
-  },
-  heal: {
-    type: 'heal',
-    amount: 3,
-    target: 'self'
-  },
-  draw: {
-    type: 'draw',
-    count: 2
-  }
-};
-```
-
-### 4. AI System (`ai/`)
-
-**AIController.ts** - AI decision making
-```typescript
-class AIController {
-  // Choose best card to play
-  async chooseCard(
-    hand: GameCard[],
-    battleState: BattleState
-  ): Promise<{ card: GameCard; targets: Target[] }>;
-
-  // Evaluate board state
-  evaluateBoardState(state: BattleState): number;
-
-  // Decide whether to attack or defend
-  getStrategy(state: BattleState): 'aggressive' | 'defensive' | 'balanced';
-}
-```
-
-**AIStrategy.ts** - AI behavior patterns
-```typescript
-const AI_STRATEGIES = {
-  aggressive: {
-    preferDamage: 0.8,
-    preferDefense: 0.1,
-    preferDraw: 0.1
-  },
-  defensive: {
-    preferDamage: 0.2,
-    preferDefense: 0.7,
-    preferDraw: 0.1
-  },
-  balanced: {
-    preferDamage: 0.4,
-    preferDefense: 0.4,
-    preferDraw: 0.2
-  }
-};
+<BattleCard
+  card={card}
+  onPress={() => playCard(card.id)}
+  disabled={!isPlayerTurn}
+/>
 ```
 
 ## Battle Flow
 
-```mermaid
-graph TD
-    A[Start Battle] --> B[Draw Starting Hands]
-    B --> C[Calculate Initiative]
-    C --> D{Player Turn}
-    D -->|Play Card| E[Add to Stack]
-    E --> F[Resolve Stack LIFO]
-    F --> G{Check Win Condition}
-    G -->|Continue| H[End Turn]
-    H --> I{AI Turn}
-    I -->|AI Plays Card| E
-    G -->|Winner Found| J[Battle End]
-    J --> K[Award Rewards]
-```
+**Simple Turn-Based System:**
+
+1. **Initialize Battle** - Create player and opponent with starting HP, mana, decks
+2. **Draw Starting Hands** - Both draw 5 cards
+3. **Player Turn:**
+   - Restore 3 mana (up to max 10)
+   - Play cards from hand (spend mana, apply effects immediately)
+   - End turn when ready
+4. **AI Turn (automatic):**
+   - Restore 3 mana
+   - Draw 1 card
+   - Play random valid cards until out of mana or cards
+   - Auto-end turn
+5. **Check Win Condition:**
+   - Player HP <= 0 → Player loses
+   - Opponent HP <= 0 → Player wins
+   - Continue if both alive
+6. **Battle End** - Trigger `onBattleEnd` callback with winner
 
 ## Usage
 
 ### Starting a Battle
 ```typescript
-import { useBattle } from '@/features/battle/hooks';
+import { BattleScreen } from '@/features/battle';
+import { useCharacter } from '@/features/character/hooks';
 
-function QuestBattleScreen({ questId, enemyId }) {
-  const { battle, startBattle, loading } = useBattle();
+function QuestBattleScreen({ onBattleComplete }) {
+  const { character } = useCharacter();
 
-  useEffect(() => {
-    startBattle({
-      type: 'pve',
-      player: currentCharacter,
-      enemy: enemyId
-    });
-  }, []);
+  const handleBattleEnd = (winner: 'player' | 'opponent') => {
+    if (winner === 'player') {
+      // Award quest rewards, update progress, etc.
+      onBattleComplete(true);
+    } else {
+      // Handle defeat
+      onBattleComplete(false);
+    }
+  };
 
-  if (loading) return <LoadingSpinner />;
-  if (!battle) return <ErrorScreen />;
-
-  return <BattleScreen battleId={battle.id} />;
-}
-```
-
-### Playing Cards
-```typescript
-import { useBattleActions } from '@/features/battle/hooks';
-
-function PlayerHand() {
-  const { hand, playCard, canPlayCard } = useBattleActions();
+  if (!character) return <LoadingSpinner />;
 
   return (
-    <View>
-      {hand.map(card => (
-        <CardRenderer
-          key={card.id}
-          card={card}
-          onClick={() => playCard(card.id)}
-          disabled={!canPlayCard(card)}
-        />
-      ))}
-    </View>
+    <BattleScreen
+      playerCharacter={character}
+      opponentName="Goblin"
+      onBattleEnd={handleBattleEnd}
+    />
   );
 }
 ```
 
-### Watching Battle State
+### Using Battle Hook Directly
 ```typescript
-import { useBattle } from '@/features/battle/hooks';
+import { useSimpleBattle } from '@/features/battle/hooks';
+import { useCharacter } from '@/features/character/hooks';
 
-function BattleStatus() {
-  const { battle } = useBattle('battle_123');
+function CustomBattleScreen() {
+  const { character } = useCharacter();
+  const {
+    battleState,
+    playCard,
+    endTurn,
+    startBattle,
+    isPlayerTurn,
+    isGameOver,
+    winner,
+  } = useSimpleBattle();
 
-  if (!battle) return null;
+  useEffect(() => {
+    if (character) {
+      startBattle(character, 'Orc Warrior');
+    }
+  }, [character]);
+
+  if (!battleState) return <LoadingSpinner />;
 
   return (
     <View>
-      <Text>Turn: {battle.currentTurn}</Text>
-      <Text>Player HP: {battle.player.hp}/{battle.player.maxHp}</Text>
-      <Text>Enemy HP: {battle.enemy.hp}/{battle.enemy.maxHp}</Text>
-      <Text>Stack: {battle.stack.length} effects</Text>
+      <Text>Turn: {battleState.turnNumber}</Text>
+      <Text>Player HP: {battleState.player.hp}/{battleState.player.maxHp}</Text>
+      <Text>Enemy HP: {battleState.opponent.hp}/{battleState.opponent.maxHp}</Text>
+
+      {isPlayerTurn && (
+        <View>
+          {battleState.player.hand.map(card => (
+            <BattleCard
+              key={card.id}
+              card={card}
+              onPress={() => playCard(card.id)}
+              disabled={false}
+            />
+          ))}
+          <Button onPress={endTurn} title="End Turn" />
+        </View>
+      )}
+
+      {isGameOver && <Text>Winner: {winner}</Text>}
     </View>
   );
 }
@@ -315,86 +273,93 @@ function BattleStatus() {
 
 ## Win Conditions
 
-- **Last Player Standing**: Opponent's HP reaches 0
-- **Deck Out**: Player cannot draw required cards (loses)
-- **Surrender**: Player manually forfeits
+- **Player Victory**: Opponent's HP reaches 0
+- **Player Defeat**: Player's HP reaches 0
 
-## Firebase Integration
-
-### Collections
-- `/battles/{battleId}` - Active battle state (real-time)
-- `/battleHistory/{userId}/{battleId}` - Completed battles
-
-### Real-time Sync
-```typescript
-// Battle state updates in real-time via onSnapshot()
-// Both players see updates instantly
-// Stack resolution synchronized across clients
-```
+**Future:**
+- Deck out (cannot draw cards)
+- Surrender option
+- Turn time limit
 
 ## AI Editing Guide
 
+**Small, focused files** - Easy to edit without breaking other parts
+
 ### To change battle UI layout:
-Edit: `ui/BattleScreen.tsx` (~200 lines)
+Edit: `ui/BattleScreen.tsx` (~300 lines)
+- Modify layout components, styling, turn indicator, etc.
 
-### To modify turn logic:
-Edit: `engine/TurnManager.ts` (~200 lines)
+### To modify battle logic:
+Edit: `engine/BattleEngine.ts` (~300 lines)
+- Change turn flow, mana restoration, card effects
+- Modify `endTurn()` method for turn logic
+- Update `applyCardEffect()` for card behavior
 
-### To add new card effects:
-1. Edit: `cards/CardEffects.ts` (add effect definition)
-2. Edit: `engine/EffectProcessor.ts` (add effect handler)
+### To add new card types:
+1. Edit: `engine/BattleEngine.ts`
+   - Add type to `SimpleCard['type']`
+   - Add case in `applyCardEffect()` method
+   - Add sample cards in starting deck
 
 ### To improve AI behavior:
-Edit: `ai/AIController.ts` (~250 lines)
+Edit: `engine/BattleEngine.ts` - `executeAITurn()` method
+- Currently plays random valid cards
+- Can add strategy (prioritize damage when low HP, etc.)
 
 ### To change win conditions:
-Edit: `engine/BattleEngine.ts` - `checkWinCondition()` method
+Edit: `engine/BattleEngine.ts` - `checkGameOver()` method
+
+### To modify card appearance:
+Edit: `ui/BattleCard.tsx` (~120 lines)
+- Change colors, layout, icons
+
+### To integrate with quests:
+Edit: Quest system to call `<BattleScreen>` and handle `onBattleEnd` callback
 
 ## Dependencies
-- `@rov/logic` - Shared game logic engine
-- `@rov/types` - Type definitions
-- `firebase/firestore` - Battle state storage
-- `features/character` - Character stats
-- `features/inventory` - Player decks
+
+**Current:**
+- `@rov/types` - Character and type definitions
+- `react-native` - UI components
+- `features/character` - Character stats (for initialization)
+
+**Future:**
+- `firebase/firestore` - Server-side battle state
+- `features/inventory` - Card collection and decks
 - `features/quests` - Quest integration
 
 ## Related Features
-- **Quests** (`features/quests/`) - Battle objectives
+- **Quests** (`features/quests/`) - Will integrate battle objectives
 - **Character** (`features/character/`) - Character stats/abilities
-- **Inventory** (`features/inventory/`) - Card collection
-- **Decks** (`features/decks/`) - Deck building
+- **Inventory** (`features/inventory/`) - Future card collection
+- **Decks** (`features/decks/`) - Future deck building
 
-## Testing
-```bash
-# Run battle tests
-pnpm test features/battle/
+## Next Steps
 
-# Test battle engine
-pnpm test features/battle/engine/BattleEngine.test.ts
-
-# Test AI
-pnpm test features/battle/ai/AIController.test.ts
-```
-
-## Known Issues
-- **CRITICAL**: Battle system doesn't currently work - needs to be built from scratch
-- Previous implementation never appeared in app
-- This module is a **complete rewrite**
-
-## Implementation Status
-- [ ] Battle UI components
-- [ ] Battle engine core
-- [ ] Turn management
-- [ ] Stack resolver
-- [ ] Effect processor
-- [ ] AI controller
-- [ ] Firebase integration
-- [ ] Quest integration
-- [ ] Testing
+1. **Test in Expo** - Verify battle screen works in mobile app
+2. **Quest Integration** - Add battle triggers to quest system
+3. **Firebase Sync** - Add server-side battle state (optional for now)
+4. **Card Variety** - Expand beyond 3 basic cards
+5. **Better AI** - Smarter opponent decision-making
+6. **Offline Mode** - Graceful degradation when offline
 
 ## Future Enhancements
-- [ ] Spectator mode
-- [ ] Battle replays
-- [ ] Tournament system
-- [ ] Ranked PvP
-- [ ] Team battles (2v2, 3v3)
+
+**Polish:**
+- Animations for card play, damage, healing
+- Sound effects
+- Better visual feedback for turn changes
+- Victory/defeat animations
+
+**Features:**
+- Save/load battle state
+- Battle replays
+- Multiple difficulty levels
+- Boss battles with special mechanics
+- PvP battles (real-time or async)
+
+**Content:**
+- More card types (shields, counters, summons)
+- Status effects (poison, stun, etc.)
+- Character abilities/ultimates
+- Equipment bonuses in battle
