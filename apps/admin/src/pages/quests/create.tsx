@@ -190,8 +190,8 @@ function generateQuestId(): string {
 }
 
 async function saveQuestToFirebase(quest: Quest): Promise<void> {
-  // TODO: Implement Firebase save
-  // const db = getFirestore();
-  // await addDoc(collection(db, 'activeQuests'), quest);
-  console.log('Saving quest to Firebase:', quest);
+  // Dynamically import to avoid server-side issues
+  const { createQuest } = await import('@/lib/firebase');
+  const result = await createQuest(quest);
+  console.log('✅ Quest saved to Firebase:', result.id);
 }
