@@ -354,7 +354,7 @@ export function PlayerQuestCreationWizard({
                       value={description}
                       onChangeText={setDescription}
                       placeholder="Describe your quest and what adventurers must do..."
-                      placeholderTextColor="#6b7280"}
+                      placeholderTextColor="#6b7280"
                       multiline
                       numberOfLines={4}
                       maxLength={200}
