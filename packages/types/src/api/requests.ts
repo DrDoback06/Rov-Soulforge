@@ -2,7 +2,8 @@
  * Cloud Function Request/Response Types
  */
 
-import type { BattleMode, Battle } from '../entities/battle';
+import type { BattleMode } from '../common/shared';
+import type { Battle } from '../entities/battle';
 
 export interface CreateBattleRequest {
   mode: BattleMode;
